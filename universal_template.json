@@ -1,0 +1,37 @@
+{
+    "scenes": [
+        {
+            "images": [
+                "URL_VƏ_YA_YOL_1",
+                "URL_VƏ_YA_YOL_2"
+            ],
+            "audio": "VOICEOVER_HISSƏ_1.mp3",
+            "durationInSeconds": 10,
+            "zoomDirection": "in"
+        },
+        {
+            "images": [
+                "URL_VƏ_YA_YOL_3"
+            ],
+            "audio": "VOICEOVER_HISSƏ_2.mp3",
+            "durationInSeconds": 5,
+            "zoomDirection": "left-to-right"
+        },
+        {
+            "images": [
+                "URL_VƏ_YA_YOL_4",
+                "URL_VƏ_YA_YOL_5",
+                "URL_VƏ_YA_YOL_6"
+            ],
+            "audio": "VOICEOVER_HISSƏ_3.mp3",
+            "durationInSeconds": 15,
+            "zoomDirection": "out"
+        }
+    ],
+    "backgroundMusic": "FON_MUSIQISI.mp3",
+    "backgroundMusicVolume": 0.1,
+    "transitionType": "fade",
+    "transitionDurationInSeconds": 1,
+    "fps": 30,
+    "audioDucking": true
+}
