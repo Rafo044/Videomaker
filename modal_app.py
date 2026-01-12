@@ -7,27 +7,24 @@ from pathlib import Path
 # Modal App təyini
 app = modal.App("remotion-video-service")
 
-# Remotion və Chromium üçün lazım olan sistem kitabxanaları
+# Remotion üçün lazım olan tam sistem kitabxanaları siyahısı
 remotion_image = (
     modal.Image.debian_slim()
     .apt_install(
         "curl", "libnss3", "libdbus-1-3", "libatk1.0-0", "libgbm-dev", "libasound2",
         "libxrandr2", "libxkbcommon-dev", "libxfixes3", "libxcomposite1", "libxdamage1",
         "libatk-bridge2.0-0", "libcups2", "ffmpeg", "fonts-noto-color-emoji", "fonts-liberation",
-        "gnupg", "wget"
+        "libgtk-3-0", "libxshmfence1", "libglu1-mesa"
     )
     .run_commands(
         "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
-        "apt-get install -y nodejs",
-        # Install Chrome Stable for better consistency than Headless Shell
-        "curl -fSsL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor | tee /usr/share/keyrings/google-chrome.gpg >> /dev/null",
-        "echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main\" | tee /etc/apt/sources.list.d/google-chrome.list",
-        "apt-get update && apt-get install -y google-chrome-stable"
+        "apt-get install -y nodejs"
     )
     .add_local_dir(".", remote_path="/app", copy=True)
     .workdir("/app")
     .run_commands(
         "npm install",
+        "npx remotion browser ensure",
         "npx remotion bundle remotion/index.ts build/bundle.js"
     )
     .pip_install("google-api-python-client", "google-auth", "google-auth-oauthlib", "google-auth-httplib2", "fastapi")
@@ -91,8 +88,7 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
     
     try:
         # Remotion CLI render
-        # --browser-executable: Google Chrome Stable istifadə edirik
-        # --concurrency 4: Stabillik üçün azaldıldı
+        # Avtomatik yüklənmiş chrome-headless-shell istifadə olunur
         result = subprocess.run([
             "npx", "remotion", "render",
             "build/bundle.js",
@@ -100,14 +96,13 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
             output_path,
             "--props", input_path,
             "--concurrency", "4",
-            "--timeout", "300000", # 5 dəqiqə limit
-            "--browser-executable", "/usr/bin/google-chrome-stable",
+            "--timeout", "120000",
             "--ignore-memory-limit-check",
-            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-web-security --disable-gpu --single-process"
+            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-web-security"
         ], capture_output=True, text=True)
 
         if result.returncode != 0:
-            print(f"Remotion Error Log:\n{result.stdout}\n{result.stderr}")
+            print(f"Remotion Log ERROR:\n{result.stderr}")
             raise Exception(f"Remotion Error: {result.stderr}")
 
         if upload_gdrive:
@@ -125,35 +120,20 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
         if os.path.exists(input_path): os.remove(input_path)
         if os.path.exists(output_path): os.remove(output_path)
 
-# Web Endpoint (Kənardan çağırmaq üçün)
+# Web Endpoint
 @app.function(image=remotion_image)
 @modal.fastapi_endpoint(method="POST")
 async def api_render(item: dict, upload: bool = False):
-    """
-    Xarici API vasitəsilə renderi tətikləyir.
-    `upload=true` parametrini keçərsəniz həm də GDrive-a yükləyər.
-    """
     try:
         video_content = render_video.remote(item, upload_gdrive=upload)
-        return modal.Response(
-            content=video_content,
-            media_type="video/mp4"
-        )
+        return modal.Response(content=video_content, media_type="video/mp4")
     except Exception as e:
-        return modal.Response(
-            content=json.dumps({"error": str(e)}),
-            status_code=500,
-            media_type="application/json"
-        )
+        return modal.Response(content=json.dumps({"error": str(e)}), status_code=500, media_type="application/json")
 
-# Yerli test üçün: python modal_app.py
 if __name__ == "__main__":
     with open("universal_template.json", "r") as f:
         test_data = json.load(f)
-    
     with app.run():
-        print("Test render göndərilir...")
         video_data = render_video.remote(test_data)
         with open("modal_result.mp4", "wb") as f:
             f.write(video_data)
-        print("Render tamamlandı! Fayl: modal_result.mp4")
