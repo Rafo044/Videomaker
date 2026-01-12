@@ -68,7 +68,7 @@ jobs:
         run: pip install modal
 
       - name: Deploy to Modal
-        # Kod dəyişibsə deploy edirik
+        # YALNIZ kod dəyişibsə deploy edirik (Məsrəf və vaxta qənaət)
         if: steps.filter.outputs.code == 'true' || github.event.inputs.force_deploy == 'true'
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
@@ -78,8 +78,8 @@ jobs:
           modal deploy modal_app.py
 
       - name: Render Sequential JSON Requests
-        # Əgər requests/ qovluğunda fayl varsa VƏ (kod dəyişibsə VƏ YA json dəyişibsə) render et
-        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
+        # YALNIZ JSON dəyişibsə və ya əllə başladılıbsa render edirik
+        if: steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
@@ -113,7 +113,7 @@ jobs:
                   with open(json_file, "r") as j:
                       data = json.load(j)
                   
-                  # Sequential call (biri bitmədən o birinə keçmir)
+                  # Modal funksiyası cavabı mütləq gözləyir (Sequential)
                   video_bytes = f.remote(data, upload_gdrive=upload_flag)
                   
                   with open(output_name, "wb") as out:

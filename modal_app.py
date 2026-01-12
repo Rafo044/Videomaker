@@ -42,11 +42,21 @@ def upload_to_gdrive(file_path: str, filename: str):
 
     creds_json = os.environ.get("SERVICE_ACCOUNT_JSON")
     if not creds_json:
-        print("SERVICE_ACCOUNT_JSON tapılmadı, upload ləğv edildi.")
+        print("❌ SERVICE_ACCOUNT_JSON tapılmadı! Modal Dashboard-da Secret-in düzgün açara (Key: SERVICE_ACCOUNT_JSON) malik olduğuna əmin olun.")
         return None
 
     try:
-        info = json.loads(creds_json)
+        # Bəzi mühitlərdə JSON dırnaq içində gələ bilər, onu təmizləyək
+        info = json.loads(creds_json.strip())
+        
+        # Servis hesabı üçün vacib sahələrin yoxlanılması
+        required_keys = ['client_email', 'token_uri', 'project_id', 'private_key']
+        missing = [k for k in required_keys if k not in info]
+        if missing:
+            print(f"❌ SERVICE_ACCOUNT_JSON formatı yanlışdır. Çatışmayan sahələr: {', '.join(missing)}")
+            print(f"Mövcud açarlar: {list(info.keys())}")
+            return None
+
         creds = service_account.Credentials.from_service_account_info(info)
         service = build('drive', 'v3', credentials=creds)
 
@@ -57,10 +67,13 @@ def upload_to_gdrive(file_path: str, filename: str):
         }
         media = MediaFileUpload(file_path, mimetype='video/mp4', resumable=True)
         file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-        print(f"GDrive Upload Uğurlu! File ID: {file.get('id')}")
+        print(f"✅ GDrive Upload Uğurlu! File ID: {file.get('id')}")
         return file.get('id')
+    except json.JSONDecodeError:
+        print("❌ SERVICE_ACCOUNT_JSON etibarlı JSON formatında deyil! Kopyalayarkən simvolların itdiyinə baxın.")
+        return None
     except Exception as e:
-        print(f"GDrive Upload Xətası: {str(e)}")
+        print(f"❌ GDrive Upload Xətası: {str(e)}")
         return None
 
 # Render funksiyası
