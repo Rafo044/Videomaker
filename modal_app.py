@@ -102,7 +102,8 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
             "CineVideo",
             output_path,
             "--props", input_path,
-            "--concurrency", "16"
+            "--concurrency", "8",
+            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
         ], capture_output=True, text=True)
 
         if result.returncode != 0:
@@ -126,7 +127,7 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
 
 # Web Endpoint (Kənardan çağırmaq üçün)
 @app.function(image=remotion_image)
-@modal.web_endpoint(method="POST")
+@modal.fastapi_endpoint(method="POST")
 async def api_render(item: dict, upload: bool = False):
     """
     Xarici API vasitəsilə renderi tətikləyir.
