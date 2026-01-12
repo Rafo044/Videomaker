@@ -11,33 +11,27 @@ app = modal.App("remotion-video-service")
 remotion_image = (
     modal.Image.debian_slim()
     .apt_install(
-        "curl",
-        "libnss3",
-        "libdbus-1-3",
-        "libatk1.0-0",
-        "libgbm-dev",
-        "libasound2",
-        "libxrandr2",
-        "libxkbcommon-dev",
-        "libxfixes3",
-        "libxcomposite1",
-        "libxdamage1",
-        "libatk-bridge2.0-0",
-        "libcups2",
-        "ffmpeg"
+        "curl", "libnss3", "libdbus-1-3", "libatk1.0-0", "libgbm-dev", "libasound2",
+        "libxrandr2", "libxkbcommon-dev", "libxfixes3", "libxcomposite1", "libxdamage1",
+        "libatk-bridge2.0-0", "libcups2", "ffmpeg", "fonts-noto-color-emoji", "fonts-liberation",
+        "gnupg", "wget"
     )
     .run_commands(
         "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
-        "apt-get install -y nodejs"
+        "apt-get install -y nodejs",
+        # Install Chrome Stable for better consistency than Headless Shell
+        "curl -fSsL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor | tee /usr/share/keyrings/google-chrome.gpg >> /dev/null",
+        "echo \"deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main\" | tee /etc/apt/sources.list.d/google-chrome.list",
+        "apt-get update && apt-get install -y google-chrome-stable"
     )
     .add_local_dir(".", remote_path="/app", copy=True)
     .workdir("/app")
     .run_commands(
         "npm install",
-        "npx remotion browser ensure",
         "npx remotion bundle remotion/index.ts build/bundle.js"
     )
     .pip_install("google-api-python-client", "google-auth", "google-auth-oauthlib", "google-auth-httplib2", "fastapi")
+    .env({"REMOTION_IGNORE_MEMORY_CHECK": "true"})
 )
 
 def upload_to_gdrive(file_path: str, filename: str):
@@ -97,22 +91,23 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
     
     try:
         # Remotion CLI render
-        # --ignore-memory-limit-check: Modal-dakı yaddaş uyğunsuzluğu xətasını keçir
-        # --disable-web-security: Assetlərin daha rahat yüklənməsi üçün
+        # --browser-executable: Google Chrome Stable istifadə edirik
+        # --concurrency 4: Stabillik üçün azaldıldı
         result = subprocess.run([
             "npx", "remotion", "render",
             "build/bundle.js",
             "CineVideo",
             output_path,
             "--props", input_path,
-            "--concurrency", "8",
-            "--timeout", "120000",
+            "--concurrency", "4",
+            "--timeout", "300000", # 5 dəqiqə limit
+            "--browser-executable", "/usr/bin/google-chrome-stable",
             "--ignore-memory-limit-check",
-            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-web-security"
+            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-web-security --disable-gpu --single-process"
         ], capture_output=True, text=True)
 
         if result.returncode != 0:
-            print(f"Render Xətası: {result.stderr}")
+            print(f"Remotion Error Log:\n{result.stdout}\n{result.stderr}")
             raise Exception(f"Remotion Error: {result.stderr}")
 
         if upload_gdrive:
