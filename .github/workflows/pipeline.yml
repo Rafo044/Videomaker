@@ -7,6 +7,7 @@ on:
       - 'requests/**'
       - 'remotion/**'
       - 'modal_app.py'
+      - 'package.json'
   workflow_dispatch:
     inputs:
       force_deploy:
@@ -40,37 +41,34 @@ jobs:
               - 'requests/*.json'
 
       # ---------------------------------------------------------
-      # STEP 1: VALIDATION
+      # STEP 1: VALIDATION & SETUP
       # ---------------------------------------------------------
       - name: Set up Node.js
-        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
       - name: Install Node dependencies
-        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
         run: npm install
 
       - name: Validate JSON Requests
-        if: steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
+        # Həmişə yoxlayaq ki, səhv JSON-la render başlamasın
         run: npx tsx scripts/validate_json.ts
 
       # ---------------------------------------------------------
       # STEP 2: MODAL ACTIONS
       # ---------------------------------------------------------
       - name: Set up Python
-        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install Modal
-        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
         run: pip install modal
 
       - name: Deploy to Modal
+        # Kod dəyişibsə deploy edirik
         if: steps.filter.outputs.code == 'true' || github.event.inputs.force_deploy == 'true'
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
@@ -80,7 +78,8 @@ jobs:
           modal deploy modal_app.py
 
       - name: Render Sequential JSON Requests
-        if: steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
+        # Əgər requests/ qovluğunda fayl varsa VƏ (kod dəyişibsə VƏ YA json dəyişibsə) render et
+        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
@@ -114,6 +113,7 @@ jobs:
                   with open(json_file, "r") as j:
                       data = json.load(j)
                   
+                  # Sequential call (biri bitmədən o birinə keçmir)
                   video_bytes = f.remote(data, upload_gdrive=upload_flag)
                   
                   with open(output_name, "wb") as out:
