@@ -48,9 +48,9 @@ def upload_to_gdrive(file_path: str, filename: str):
     from googleapiclient.http import MediaFileUpload
     from google.oauth2 import service_account
 
-    creds_json = os.environ.get("GDRIVE_SERVICE_ACCOUNT_JSON")
+    creds_json = os.environ.get("SERVICE_ACCOUNT_JSON")
     if not creds_json:
-        print("GDRIVE_SERVICE_ACCOUNT_JSON tapılmadı, upload ləğv edildi.")
+        print("SERVICE_ACCOUNT_JSON tapılmadı, upload ləğv edildi.")
         return None
 
     try:
@@ -78,7 +78,7 @@ def upload_to_gdrive(file_path: str, filename: str):
     memory=32768,
     timeout=1200,
     secrets=[
-        modal.Secret.from_name("videomaker-secrets")
+        modal.Secret.from_name("googlecloud-secret")
     ]
 )
 def render_video(input_data: dict, upload_gdrive: bool = False):
