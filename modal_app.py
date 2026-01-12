@@ -4,7 +4,7 @@ import json
 import subprocess
 from pathlib import Path
 
-# Modal App təyini
+# Modal App təyini - v2.1 (Trigger)
 app = modal.App("remotion-video-service")
 
 # Remotion üçün lazım olan tam sistem kitabxanaları siyahısı
