@@ -37,7 +37,7 @@ remotion_image = (
         "npx remotion browser ensure",
         "npx remotion bundle remotion/index.ts build/bundle.js"
     )
-    .pip_install("google-api-python-client", "google-auth", "google-auth-oauthlib", "google-auth-httplib2")
+    .pip_install("google-api-python-client", "google-auth", "google-auth-oauthlib", "google-auth-httplib2", "fastapi")
 )
 
 def upload_to_gdrive(file_path: str, filename: str):
