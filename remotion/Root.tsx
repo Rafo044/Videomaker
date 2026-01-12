@@ -15,32 +15,45 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
         schema={CineVideoSchema}
         calculateMetadata={({ props }: { props: CineVideoProps }) => {
-          const totalDuration = props.scenes.reduce(
-            (acc, scene) => acc + scene.durationInSeconds,
-            0
-          );
+          const fps = props.fps || 30;
 
-          // Account for overlap in transitions
-          const transitionOverlap = (props.scenes.length - 1) * (props.transitionDurationInSeconds || 1);
-          const finalDurationSeconds = totalDuration - transitionOverlap;
+          // TransitionSeries müddəti belə hesablanır:
+          // Bütün Sequence-lərin cəmi MINUS bütün Transition-ların cəmi.
+
+          let totalFrames = 0;
+          props.scenes.forEach((scene, index) => {
+            const sceneFrames = Math.round(scene.durationInSeconds * fps);
+            totalFrames += sceneFrames;
+
+            // Əgər sonda transition varsa, o müddəti çıxırıq (overlap)
+            if (index < props.scenes.length - 1 && scene.transitionAfter && scene.transitionAfter !== 'none') {
+              const transitionDuration = scene.transitionDuration || 1;
+              const transitionFrames = Math.round(transitionDuration * fps);
+              totalFrames -= transitionFrames;
+            }
+          });
 
           return {
-            durationInFrames: Math.max(1, Math.round(finalDurationSeconds * props.fps)),
+            durationInFrames: Math.max(1, totalFrames),
+            fps: fps,
           };
         }}
         defaultProps={{
           scenes: [
             {
-              assets: ["https://remotion-assets.s3.eu-central-1.amazonaws.com/found-the-f-1.png"],
-              audio: "https://remotion-assets.s3.eu-central-1.amazonaws.com/remotion-intro.mp3",
+              assets: ["https://picsum.photos/seed/remotion/1920/1080"],
               durationInSeconds: 5,
               zoomDirection: "in",
+              transitionAfter: "fade",
+              transitionDuration: 1
+            },
+            {
+              assets: ["https://picsum.photos/seed/remotion2/1920/1080"],
+              durationInSeconds: 5,
+              zoomDirection: "out"
             }
           ],
-          backgroundMusic: undefined,
           backgroundMusicVolume: 0.1,
-          transitionType: "fade",
-          transitionDurationInSeconds: 1,
           fps: 30,
           audioDucking: true,
         }}

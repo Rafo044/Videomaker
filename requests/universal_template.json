@@ -1,0 +1,100 @@
+{
+    "scenes": [
+        {
+            "assets": [
+                "https://picsum.photos/seed/bg1/1920/1080"
+            ],
+            "durationInSeconds": 6,
+            "kenBurns": {
+                "startScale": 1.3,
+                "endScale": 1,
+                "easing": "easeOut"
+            },
+            "titleCard": {
+                "text": "Premium Graphics",
+                "subtitle": "Professional Remotion Template",
+                "animation": "slideUp",
+                "position": "center",
+                "showAt": 0.5,
+                "hideAt": 4
+            },
+            "particles": {
+                "type": "sparkles",
+                "count": 50,
+                "showAt": 0,
+                "hideAt": 6,
+                "color": "#6366f1"
+            },
+            "transitionAfter": "wipe",
+            "transitionDuration": 1
+        },
+        {
+            "assets": [
+                "https://picsum.photos/seed/bg2/1920/1080"
+            ],
+            "durationInSeconds": 8,
+            "chart": {
+                "type": "bar",
+                "title": "Revenue Growth 2024",
+                "data": [
+                    {
+                        "label": "Q1",
+                        "value": 450,
+                        "color": "#6366f1"
+                    },
+                    {
+                        "label": "Q2",
+                        "value": 780,
+                        "color": "#f43f5e"
+                    },
+                    {
+                        "label": "Q3",
+                        "value": 920,
+                        "color": "#10b981"
+                    },
+                    {
+                        "label": "Q4",
+                        "value": 1200,
+                        "color": "#f59e0b"
+                    }
+                ],
+                "showAt": 1,
+                "hideAt": 7.5,
+                "position": "center"
+            },
+            "lowerThird": {
+                "name": "Financial Analyst",
+                "title": "Strategy Leader",
+                "showAt": 2,
+                "hideAt": 6
+            },
+            "transitionAfter": "fade",
+            "transitionDuration": 1
+        }
+    ],
+    "backgroundMusic": "https://www.bensound.com/bensound-music/bensound-ukulele.mp3",
+    "backgroundMusicVolume": 0.12,
+    "fps": 30,
+    "audioDucking": true,
+    "watermark": {
+        "imageUrl": "https://picsum.photos/seed/my-logo/200/200",
+        "position": "bottom-right",
+        "opacity": 0.5,
+        "scale": 0.6
+    },
+    "endScreen": {
+        "text": "Join Our Journey",
+        "callToAction": "Subscribe Now",
+        "socialLinks": [
+            {
+                "platform": "YouTube",
+                "url": "#"
+            },
+            {
+                "platform": "Instagram",
+                "url": "#"
+            }
+        ],
+        "duration": 4
+    }
+}

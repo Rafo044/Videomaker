@@ -3,6 +3,10 @@ name: Smart Video Pipeline
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'requests/**'
+      - 'remotion/**'
+      - 'modal_app.py'
   workflow_dispatch:
     inputs:
       force_deploy:
@@ -12,7 +16,7 @@ on:
       upload_gdrive:
         description: 'Gdrive-a yüklənsin?'
         type: boolean
-        default: false
+        default: true
 
 jobs:
   ci-cd:
@@ -32,19 +36,38 @@ jobs:
               - 'modal_app.py'
               - 'remotion/**'
               - 'package.json'
-            json:
-              - '*.json'
-              - '!package*.json'
-              - '!tsconfig.json'
+            requests:
+              - 'requests/*.json'
 
+      # ---------------------------------------------------------
+      # STEP 1: VALIDATION
+      # ---------------------------------------------------------
+      - name: Set up Node.js
+        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
+        run: npm install
+
+      - name: Validate JSON Requests
+        if: steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
+        run: npx tsx scripts/validate_json.ts
+
+      # ---------------------------------------------------------
+      # STEP 2: MODAL ACTIONS
+      # ---------------------------------------------------------
       - name: Set up Python
-        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.json == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install Modal
-        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.json == 'true' || github.event_name == 'workflow_dispatch'
+        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
         run: pip install modal
 
       - name: Deploy to Modal
@@ -56,61 +79,55 @@ jobs:
           modal token set --token-id $MODAL_TOKEN_ID --token-secret $MODAL_TOKEN_SECRET
           modal deploy modal_app.py
 
-      - name: Render All JSON Templates
-        if: steps.filter.outputs.json == 'true' || steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
+      - name: Render Sequential JSON Requests
+        if: steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
-          GDRIVE_UPLOAD: ${{ github.event.inputs.upload_gdrive || 'false' }}
+          GDRIVE_UPLOAD: ${{ github.event.inputs.upload_gdrive || 'true' }}
         run: |
           modal token set --token-id $MODAL_TOKEN_ID --token-secret $MODAL_TOKEN_SECRET
           python -c '
           import modal, json, os, glob
           from pathlib import Path
           
-          # 1. Servisi tapırıq
           try:
               f = modal.Function.from_name("remotion-video-service", "render_video")
           except Exception as e:
-              print(f"Xəta: Servis tapılmadı! Əvvəlcə deploy etməlisiniz. {e}")
+              print(f"Xəta: Servis tapılmadı! {e}")
               exit(1)
 
-          # 2. Bütün uyğun JSON fayllarını tapırıq (sistem faylları xaric)
-          exclude = ["package.json", "package-lock.json", "tsconfig.json"]
-          json_files = [f for f in glob.glob("*.json") if f not in exclude]
-          
+          json_files = glob.glob("requests/*.json")
           if not json_files:
-              print("Render üçün JSON faylı tapılmadı.")
+              print("Render üçün heç bir JSON faylı tapılmadı.")
               exit(0)
 
           os.makedirs("renders", exist_ok=True)
-          upload_flag = os.getenv("GDRIVE_UPLOAD", "false").lower() == "true"
+          upload_flag = os.getenv("GDRIVE_UPLOAD", "true").lower() == "true"
           
-          print(f"Toplam {len(json_files)} fayl emal olunacaq...")
+          print(f"Toplam {len(json_files)} fayl SIRALI şəkildə emal olunacaq...")
 
-          # 3. SIRALI olaraq (sequential) hər birini render edirik
           for json_file in sorted(json_files):
               output_name = f"renders/{Path(json_file).stem}.mp4"
-              print(f"\n>>> İşlənir: {json_file}")
-              
-              with open(json_file, "r") as j:
-                  data = json.load(j)
-              
-              # f.remote() burada cavab gələnə qədər gözləyəcək (blocking)
-              video_bytes = f.remote(data, upload_gdrive=upload_flag)
-              
-              with open(output_name, "wb") as out:
-                  out.write(video_bytes)
-              
-              print(f"<<< Tamamlandı: {output_name}")
-          
-          print("\nBütün renderlər uğurla başa çatdı.")
+              print(f"\n--- GÖNDƏRİLİR: {json_file} ---")
+              try:
+                  with open(json_file, "r") as j:
+                      data = json.load(j)
+                  
+                  video_bytes = f.remote(data, upload_gdrive=upload_flag)
+                  
+                  with open(output_name, "wb") as out:
+                      out.write(video_bytes)
+                  print(f"--- TAMAMLANDI: {output_name} ---")
+              except Exception as e:
+                  print(f"!!! XƏTA ({json_file}): {e}")
+                  continue
           '
 
       - name: Upload Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: all-rendered-videos
+          name: rendered-videos-${{ github.run_id }}
           path: renders/*.mp4
-          if-no-files-found: ignore
+          if-no-files-found: warn

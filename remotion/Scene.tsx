@@ -1,124 +1,125 @@
-import React from "react";
-import {
-    AbsoluteFill,
-    Img,
-    Video,
-    Audio,
-    interpolate,
-    useCurrentFrame,
-    useVideoConfig,
-    Series,
-    staticFile,
-} from "remotion";
-import { SceneProps } from "./schema";
+import React, { useMemo } from 'react';
+import { AbsoluteFill, Audio, Img, Video, useCurrentFrame, useVideoConfig, interpolate, spring, Easing } from 'remotion';
+import { SceneProps } from './schema';
+import { ProgressBar } from './ProgressBar';
+import { ParticleSystem } from './ParticleSystem';
+import { Chart } from './Chart';
 
-const isVideo = (src: string) => {
-    const videoExtensions = [".mp4", ".webm", ".mov", ".mkv", ".ogg"];
-    const lowerSrc = src.toLowerCase();
-    return videoExtensions.some(ext => lowerSrc.endsWith(ext)) || lowerSrc.includes("video");
+const isVideo = (url: string): boolean => {
+    return /\.(mp4|webm|mov|avi)$/i.test(url);
 };
 
-export const Scene: React.FC<SceneProps & { isFirst?: boolean; transitionFrames?: number }> = ({
-    assets,
-    audio,
-    zoomDirection,
-    isFirst = false,
-    transitionFrames = 30,
-    durationInSeconds,
+const getEasingFunction = (easing?: string) => {
+    switch (easing) {
+        case 'easeIn': return Easing.in(Easing.ease);
+        case 'easeOut': return Easing.out(Easing.ease);
+        case 'easeInOut': return Easing.inOut(Easing.ease);
+        case 'linear':
+        default: return Easing.linear;
+    }
+};
+
+export const Scene: React.FC<SceneProps & { transitionFrames: number }> = ({
+    assets, audio, durationInSeconds, zoomDirection, kenBurns, videoPlayback,
+    titleCard, subtitles, lowerThird, progressBar, particles, chart, transitionFrames
 }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
+    const durationFrames = Math.round(durationInSeconds * fps);
+    const assetUrl = useMemo(() => assets[0], [assets]);
+    const isVideoAsset = isVideo(assetUrl);
 
-    // Motion logic (Ken Burns)
-    const isStill = zoomDirection === "still";
-    const zoom = isStill ? 1.05 : interpolate(
-        frame,
-        [0, 900], // Smooth over 30s
-        zoomDirection === "in" ? [1, 1.3] : zoomDirection === "out" ? [1.3, 1] : [1.1, 1.1],
-        { extrapolateRight: "extend" }
-    );
+    const progress = spring({ frame, fps, config: { damping: 200, mass: 1, stiffness: 50 } });
 
-    const xPan = isStill ? 0 : interpolate(
-        frame,
-        [0, 900],
-        zoomDirection === "left-to-right" ? [-60, 60] : zoomDirection === "right-to-left" ? [60, -60] : [0, 0],
-        { extrapolateRight: "extend" }
-    );
+    const getTransform = () => {
+        let scale = 1, translateX = 0, translateY = 0, rotate = 0;
 
-    // Fade-in transition for the whole scene group
-    const sceneOpacity = isFirst ? 1 : interpolate(
-        frame,
-        [0, transitionFrames],
-        [0, 1],
-        { extrapolateRight: "clamp" }
-    );
+        if (kenBurns) {
+            const easing = getEasingFunction(kenBurns.easing);
+            scale = interpolate(progress, [0, 1], [kenBurns.startScale || 1.2, kenBurns.endScale || 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing });
+            translateX = interpolate(progress, [0, 1], [kenBurns.startX || 0, kenBurns.endX || 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing });
+            translateY = interpolate(progress, [0, 1], [kenBurns.startY || 0, kenBurns.endY || 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing });
+            if (kenBurns.rotation) rotate = interpolate(progress, [0, 1], [0, kenBurns.rotation], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing });
+        } else if (zoomDirection && !isVideoAsset) {
+            switch (zoomDirection) {
+                case 'in': scale = interpolate(progress, [0, 1], [1.2, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }); break;
+                case 'out': scale = interpolate(progress, [0, 1], [1, 1.2], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }); break;
+                case 'left-to-right': translateX = interpolate(progress, [0, 1], [-3, 3], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }); scale = 1.05; break;
+                case 'right-to-left': translateX = interpolate(progress, [0, 1], [3, -3], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }); scale = 1.05; break;
+            }
+        }
+        return { transform: `scale(${scale}) translateX(${translateX}%) translateY(${translateY}%) rotate(${rotate}deg)` };
+    };
 
-    // Calculate asset durations within this scene segment
-    const totalFrames = Math.round(durationInSeconds * fps);
-    const framesPerAsset = totalFrames / assets.length;
+    const opacity = interpolate(frame, [0, transitionFrames, durationFrames - transitionFrames, durationFrames], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+    const audioVolume = interpolate(frame, [0, transitionFrames, durationFrames - transitionFrames, durationFrames], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+
+    const renderTitleCard = () => {
+        if (!titleCard) return null;
+        const showFrame = (titleCard.showAt || 0) * fps;
+        const hideFrame = (titleCard.hideAt || durationInSeconds) * fps;
+        if (frame < showFrame || frame > hideFrame) return null;
+        const titleOpacity = interpolate(frame, [showFrame, showFrame + 15, hideFrame - 15, hideFrame], [0, 1, 1, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+        const yOffset = titleCard.animation === 'slideUp' ? interpolate(frame, [showFrame, showFrame + 20], [50, 0], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }) : 0;
+        return (
+            <AbsoluteFill style={{ justifyContent: titleCard.position || 'center', alignItems: 'center', padding: '5%' }}>
+                <div style={{ opacity: titleOpacity, transform: `translateY(${yOffset}px)`, textAlign: 'center', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>
+                    <h1 style={{ fontSize: '80px', fontWeight: 'bold', margin: 0, fontFamily: 'Inter, sans-serif' }}>{titleCard.text}</h1>
+                    {titleCard.subtitle && <p style={{ fontSize: '40px', marginTop: '20px', opacity: 0.9 }}>{titleCard.subtitle}</p>}
+                </div>
+            </AbsoluteFill>
+        );
+    };
+
+    const renderSubtitles = () => {
+        if (!subtitles || subtitles.length === 0) return null;
+        const currentTime = frame / fps;
+        const activeSubtitle = subtitles.find(sub => currentTime >= sub.start && currentTime <= sub.end);
+        if (!activeSubtitle) return null;
+        return (
+            <AbsoluteFill style={{ justifyContent: 'flex-end', alignItems: 'center', paddingBottom: '10%' }}>
+                <div style={{ backgroundColor: 'rgba(0,0,0,0.8)', padding: '15px 40px', borderRadius: '8px', color: 'white', fontSize: '36px', fontFamily: 'Inter, sans-serif', maxWidth: '80%', textAlign: 'center' }}>
+                    {activeSubtitle.text}
+                </div>
+            </AbsoluteFill>
+        );
+    };
+
+    const renderLowerThird = () => {
+        if (!lowerThird) return null;
+        const showFrame = lowerThird.showAt * fps;
+        const hideFrame = lowerThird.hideAt * fps;
+        if (frame < showFrame || frame > hideFrame) return null;
+        const slideX = interpolate(frame, [showFrame, showFrame + 20, hideFrame - 20, hideFrame], [-300, 0, 0, -300], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
+        return (
+            <AbsoluteFill style={{ justifyContent: 'flex-end', padding: '5%' }}>
+                <div style={{ transform: `translateX(${slideX}px)`, backgroundColor: 'rgba(255,255,255,0.95)', padding: '20px 40px', borderLeft: '8px solid #3b82f6', maxWidth: '500px' }}>
+                    <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#1f2937' }}>{lowerThird.name}</div>
+                    <div style={{ fontSize: '24px', color: '#6b7280', marginTop: '5px' }}>{lowerThird.title}</div>
+                </div>
+            </AbsoluteFill>
+        );
+    };
 
     return (
-        <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden", opacity: sceneOpacity }}>
-            {/* Background Motion Container */}
-            <div
-                style={{
-                    transform: `scale(${zoom}) translateX(${xPan}px)`,
-                    width: "100%",
-                    height: "100%",
-                }}
-            >
-                <Series>
-                    {assets.map((asset, i) => {
-                        const isVid = isVideo(asset);
-                        const assetSrc = asset.startsWith("http") ? asset : staticFile(asset);
+        <AbsoluteFill style={{ backgroundColor: '#000' }}>
+            <AbsoluteFill style={{ opacity, ...getTransform() }}>
+                {isVideoAsset ? (
+                    <Video src={assetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} startFrom={videoPlayback?.startFrom ? Math.round(videoPlayback.startFrom * fps) : 0} endAt={videoPlayback?.endAt ? Math.round(videoPlayback.endAt * fps) : durationFrames} volume={0} muted={true} loop={videoPlayback?.loop || false} />
+                ) : (
+                    <Img src={assetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
+            </AbsoluteFill>
 
-                        return (
-                            <Series.Sequence key={i} durationInFrames={Math.ceil(framesPerAsset)}>
-                                {isVid ? (
-                                    <Video
-                                        src={assetSrc}
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            objectFit: "cover",
-                                        }}
-                                        muted // Muted because we have a separate audio track
-                                    />
-                                ) : (
-                                    <Img
-                                        src={assetSrc}
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            objectFit: "cover",
-                                        }}
-                                    />
-                                )}
-                            </Series.Sequence>
-                        );
-                    })}
-                </Series>
-            </div>
+            {renderTitleCard()}
+            {renderSubtitles()}
+            {renderLowerThird()}
 
-            {/* Cinematic Overlays */}
-            <AbsoluteFill
-                style={{
-                    boxShadow: "inset 0 0 200px rgba(0,0,0,0.8)",
-                    background: "radial-gradient(circle, transparent 40%, rgba(0,0,0,0.4) 100%)",
-                }}
-            />
+            {progressBar && <ProgressBar {...progressBar} fps={fps} />}
+            {particles && <ParticleSystem {...particles} fps={fps} />}
+            {chart && <Chart {...chart} fps={fps} />}
 
-            <AbsoluteFill
-                style={{
-                    opacity: 0.04,
-                    pointerEvents: "none",
-                    backgroundImage: `url("https://www.transparenttextures.com/patterns/stardust.png")`,
-                    mixBlendMode: "overlay"
-                }}
-            />
-
-            {/* Shared audio for all assets in this scene */}
-            {audio && <Audio src={audio.startsWith("http") ? audio : staticFile(audio)} />}
+            {audio && <Audio src={audio} volume={audioVolume} />}
         </AbsoluteFill>
     );
 };

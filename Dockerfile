@@ -1,41 +1,54 @@
-FROM node:lts-bookworm
+FROM node:20-bookworm
 
-
-# Install dependencies required for chromium
+# Install system dependencies for Chromium
 RUN apt-get update && apt-get install -y \
-  libnss3 \
-  libdbus-1-3 \
-  libatk1.0-0 \
-  libgbm-dev \
-  libasound2 \
-  libxrandr2 \
-  libxkbcommon-dev \
-  libxfixes3 \
-  libxcomposite1 \
-  libxdamage1 \
-  libatk-bridge2.0-0 \
-  libcups2
-
+    curl \
+    libnss3 \
+    libdbus-1-3 \
+    libatk1.0-0 \
+    libgbm-dev \
+    libasound2 \
+    libxrandr2 \
+    libxkbcommon-dev \
+    libxfixes3 \
+    libxcomposite1 \
+    libxdamage1 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libxshmfence1 \
+    libgtk-3-0 \
+    libglu1-mesa \
+    fonts-liberation \
+    fonts-noto-color-emoji \
+    ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
+# Copy package files
 COPY package*.json ./
 
+# Install dependencies
 RUN npm install
 
+# Copy project files
 COPY . .
 
+# Create output directory
 RUN mkdir -p renders
 
-# Install browser
+# Install Remotion browser
 RUN npx remotion browser ensure
 
-# Bundle the Remotion composition
-RUN npx remotion bundle
-# By default, bundle command will create "build" directory with the bundle
-ENV REMOTION_SERVE_URL=build
+# Bundle Remotion project
+RUN npx remotion bundle remotion/index.ts build/bundle.js
 
+# Set environment variables
 ENV NODE_ENV=production
+ENV REMOTION_IGNORE_MEMORY_CHECK=true
 
-# Start the server
+# Expose port
+EXPOSE 8000
+
+# Start server
 CMD ["npm", "start"]

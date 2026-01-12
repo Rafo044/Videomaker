@@ -86,30 +86,28 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
 
     print(f"Render başladı: {job_id}")
     
-    # Bundle mövcudluğunu yoxla
-    if not os.path.exists("build/bundle.js"):
-        print("XƏTA: build/bundle.js tapılmadı! Yenidən bundle edilir...")
-        subprocess.run(["npx", "remotion", "bundle", "remotion/index.ts", "build/bundle.js"], check=True)
+    # Mühit dəyişənlərini gücləndiririk
+    env = os.environ.copy()
+    env["REMOTION_IGNORE_MEMORY_CHECK"] = "true"
 
     try:
         # Remotion CLI render
+        # --single-process: Brauzerin daha az resursla daha stabil işləməsi üçün
         result = subprocess.run([
             "npx", "remotion", "render",
-            "build/bundle.js",
+            "remotion/index.ts", # Birbaşa mənbədən render edək
             "CineVideo",
             output_path,
             "--props", input_path,
-            "--concurrency", "4",
-            "--timeout", "120000",
+            "--concurrency", "2", # Daha stabil olması üçün 2-yə endirdik
+            "--timeout", "240000",
             "--log", "verbose",
             "--ignore-memory-limit-check",
-            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-web-security --disable-gpu"
-        ], capture_output=True, text=True)
+            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-web-security --disable-gpu --single-process"
+        ], capture_output=True, text=True, env=env)
 
-        if result.stdout:
-            print(f"Remotion STDOUT:\n{result.stdout}")
-        if result.stderr:
-            print(f"Remotion STDERR:\n{result.stderr}")
+        if result.stdout: print(f"Remotion STDOUT:\n{result.stdout}")
+        if result.stderr: print(f"Remotion STDERR:\n{result.stderr}")
 
         if result.returncode != 0:
             raise Exception(f"Remotion Error: {result.stderr}")
