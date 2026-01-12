@@ -30,7 +30,7 @@ remotion_image = (
         "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
         "apt-get install -y nodejs"
     )
-    .copy_local_dir(".", "/app")
+    .add_local_dir(".", remote_path="/app")
     .workdir("/app")
     .run_commands(
         "npm install",
