@@ -2,23 +2,23 @@
     "scenes": [
         {
             "assets": [
-                "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1920&q=80",
-                "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=1920&q=80"
+                "https://remotion-assets.s3.eu-central-1.amazonaws.com/found-the-f-1.png",
+                "https://remotion-assets.s3.eu-central-1.amazonaws.com/found-the-f-2.png"
             ],
-            "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+            "audio": "https://remotion-assets.s3.eu-central-1.amazonaws.com/remotion-intro.mp3",
             "durationInSeconds": 5,
             "zoomDirection": "in"
         },
         {
             "assets": [
-                "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1920&q=80"
+                "https://remotion-assets.s3.eu-central-1.amazonaws.com/found-the-f-3.png"
             ],
-            "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+            "audio": "https://remotion-assets.s3.eu-central-1.amazonaws.com/remotion-intro.mp3",
             "durationInSeconds": 5,
             "zoomDirection": "left-to-right"
         }
     ],
-    "backgroundMusic": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+    "backgroundMusic": "https://remotion-assets.s3.eu-central-1.amazonaws.com/remotion-intro.mp3",
     "backgroundMusicVolume": 0.05,
     "transitionType": "fade",
     "transitionDurationInSeconds": 1,

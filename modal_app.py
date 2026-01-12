@@ -96,14 +96,17 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
     print(f"Render başladı: {job_id}")
     
     try:
+        # Remotion CLI render
         result = subprocess.run([
             "npx", "remotion", "render",
             "build/bundle.js",
             "CineVideo",
             output_path,
             "--props", input_path,
-            "--concurrency", "8",
-            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
+            "--concurrency", "4", # 16-dan 4-ə endirildi (yaddaş xətası üçün)
+            "--timeout", "120000", # 120 saniyə (delayRender üçün)
+            "--browser-executable", "/app/node_modules/.remotion/chrome-headless-shell/linux64/chrome-headless-shell-linux64/chrome-headless-shell",
+            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
         ], capture_output=True, text=True)
 
         if result.returncode != 0:
