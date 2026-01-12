@@ -88,7 +88,6 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
     
     try:
         # Remotion CLI render
-        # Avtomatik yüklənmiş chrome-headless-shell istifadə olunur
         result = subprocess.run([
             "npx", "remotion", "render",
             "build/bundle.js",
@@ -97,8 +96,9 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
             "--props", input_path,
             "--concurrency", "4",
             "--timeout", "120000",
+            "--log", "verbose", # Detallı loglar üçün
             "--ignore-memory-limit-check",
-            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-web-security"
+            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-web-security --disable-gpu"
         ], capture_output=True, text=True)
 
         if result.returncode != 0:
