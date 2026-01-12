@@ -86,6 +86,11 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
 
     print(f"Render başladı: {job_id}")
     
+    # Bundle mövcudluğunu yoxla
+    if not os.path.exists("build/bundle.js"):
+        print("XƏTA: build/bundle.js tapılmadı! Yenidən bundle edilir...")
+        subprocess.run(["npx", "remotion", "bundle", "remotion/index.ts", "build/bundle.js"], check=True)
+
     try:
         # Remotion CLI render
         result = subprocess.run([
@@ -96,13 +101,17 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
             "--props", input_path,
             "--concurrency", "4",
             "--timeout", "120000",
-            "--log", "verbose", # Detallı loglar üçün
+            "--log", "verbose",
             "--ignore-memory-limit-check",
             "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-web-security --disable-gpu"
         ], capture_output=True, text=True)
 
+        if result.stdout:
+            print(f"Remotion STDOUT:\n{result.stdout}")
+        if result.stderr:
+            print(f"Remotion STDERR:\n{result.stderr}")
+
         if result.returncode != 0:
-            print(f"Remotion Log ERROR:\n{result.stderr}")
             raise Exception(f"Remotion Error: {result.stderr}")
 
         if upload_gdrive:

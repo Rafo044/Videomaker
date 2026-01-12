@@ -4,6 +4,7 @@ import { CineVideo } from "./CineVideo";
 import { CineVideoSchema, CineVideoProps } from "./schema";
 
 export const RemotionRoot: React.FC = () => {
+  console.log("Remotion: RemotionRoot rendering...");
   return (
     <>
       <Composition

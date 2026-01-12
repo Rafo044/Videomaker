@@ -11,6 +11,7 @@ export const CineVideo: React.FC<CineVideoProps> = ({
     fps = 30,
     audioDucking = true,
 }) => {
+    console.log("Remotion: CineVideo rendering...", { sceneCount: scenes.length });
     const transitionFrames = Math.round(transitionDurationInSeconds * fps);
 
     let currentFrame = 0;
