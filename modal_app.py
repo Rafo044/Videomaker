@@ -65,8 +65,17 @@ def upload_to_gdrive(file_path: str, filename: str):
             'name': filename,
             'parents': [folder_id]
         }
+        
         media = MediaFileUpload(file_path, mimetype='video/mp4', resumable=True)
-        file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        
+        # Shared Drive dəstəyi üçün 'supportsAllDrives=True' əlavə edilməlidir
+        file = service.files().create(
+            body=file_metadata, 
+            media_body=media, 
+            fields='id',
+            supportsAllDrives=True # Shared Drive üçün vacibdir
+        ).execute()
+        
         print(f"✅ GDrive Upload Uğurlu! File ID: {file.get('id')}")
         return file.get('id')
     except json.JSONDecodeError:
