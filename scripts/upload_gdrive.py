@@ -3,27 +3,40 @@ import json
 import sys
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-from google.oauth2 import service_account
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 
 def upload_file(file_path):
-    # 1. Load configuration
-    creds_json = os.environ.get("SERVICE_ACCOUNT_JSON")
+    # Bu məlumatları GitHub Secrets-dən alacağıq
+    client_id = os.environ.get("GDRIVE_CLIENT_ID")
+    client_secret = os.environ.get("GDRIVE_CLIENT_SECRET")
+    refresh_token = os.environ.get("GDRIVE_REFRESH_TOKEN")
     folder_id = os.environ.get("GDRIVE_FOLDER_ID", "1aYD8R1ZE1L9HQZudXQMOhwoqEOYkxaGS")
     
-    if not creds_json:
-        print("Error: SERVICE_ACCOUNT_JSON secret is missing!")
+    if not refresh_token:
+        print("Error: GDRIVE_REFRESH_TOKEN is missing! Please provide OAuth2 credentials.")
         sys.exit(1)
 
     try:
-        # 2. Setup GDrive Service
-        info = json.loads(creds_json)
-        creds = service_account.Credentials.from_service_account_info(info)
+        # 1. Credentials obyektini yaradırıq (Sizin adınızdan işləyəcək)
+        creds = Credentials(
+            token=None, # Yeni token refresh_token vasitəsilə alınacaq
+            refresh_token=refresh_token,
+            client_id=client_id,
+            client_secret=client_secret,
+            token_uri="https://oauth2.googleapis.com/token"
+        )
+        
+        # 2. Token-in vaxtı keçibsə, yeniləyirik
+        if not creds.valid:
+            creds.refresh(Request())
+
         service = build('drive', 'v3', credentials=creds)
 
         filename = os.path.basename(file_path)
-        print(f"Uploading {filename} to GDrive folder {folder_id}...")
+        print(f"Uploading {filename} to GDrive as user (Personal Account)...")
 
-        # 3. File Metadata
+        # 3. Fayl məlumatları
         file_metadata = {
             'name': filename,
             'parents': [folder_id]
@@ -31,23 +44,17 @@ def upload_file(file_path):
         
         media = MediaFileUpload(file_path, mimetype='video/mp4', resumable=True)
         
-        # 4. Create File
+        # 4. Yükləmə (Sizin 15GB kvotanız istifadə olunur)
         file = service.files().create(
             body=file_metadata,
             media_body=media,
-            fields='id',
-            supportsAllDrives=True
+            fields='id'
         ).execute()
 
-        file_id = file.get('id')
-        print(f"Successfully uploaded! File ID: {file_id}")
+        print(f"✅ Uğurla yükləndi! Fayl Sahibi: Siz. File ID: {file.get('id')}")
 
-        # 5. Share with Owner (Optional but helpful for My Drive quota issues)
-        # Attempt to make it readable/owned by the real user email if possible
-        # However, for Service Accounts, the quota usually counts where the file is created.
-        
     except Exception as e:
-        print(f"GDrive Upload Failed: {str(e)}")
+        print(f"❌ GDrive OAuth2 Upload Failed: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":
