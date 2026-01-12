@@ -2,16 +2,24 @@ import React from "react";
 import {
     AbsoluteFill,
     Img,
+    Video,
     Audio,
     interpolate,
     useCurrentFrame,
     useVideoConfig,
     Series,
+    staticFile,
 } from "remotion";
 import { SceneProps } from "./schema";
 
+const isVideo = (src: string) => {
+    const videoExtensions = [".mp4", ".webm", ".mov", ".mkv", ".ogg"];
+    const lowerSrc = src.toLowerCase();
+    return videoExtensions.some(ext => lowerSrc.endsWith(ext)) || lowerSrc.includes("video");
+};
+
 export const Scene: React.FC<SceneProps & { isFirst?: boolean; transitionFrames?: number }> = ({
-    images,
+    assets,
     audio,
     zoomDirection,
     isFirst = false,
@@ -45,9 +53,9 @@ export const Scene: React.FC<SceneProps & { isFirst?: boolean; transitionFrames?
         { extrapolateRight: "clamp" }
     );
 
-    // Calculate image durations within this scene segment
+    // Calculate asset durations within this scene segment
     const totalFrames = Math.round(durationInSeconds * fps);
-    const framesPerImage = totalFrames / images.length;
+    const framesPerAsset = totalFrames / assets.length;
 
     return (
         <AbsoluteFill style={{ backgroundColor: "#000", overflow: "hidden", opacity: sceneOpacity }}>
@@ -60,18 +68,35 @@ export const Scene: React.FC<SceneProps & { isFirst?: boolean; transitionFrames?
                 }}
             >
                 <Series>
-                    {images.map((img, i) => (
-                        <Series.Sequence key={i} durationInFrames={Math.ceil(framesPerImage)}>
-                            <Img
-                                src={img}
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    objectFit: "cover",
-                                }}
-                            />
-                        </Series.Sequence>
-                    ))}
+                    {assets.map((asset, i) => {
+                        const isVid = isVideo(asset);
+                        const assetSrc = asset.startsWith("http") ? asset : staticFile(asset);
+
+                        return (
+                            <Series.Sequence key={i} durationInFrames={Math.ceil(framesPerAsset)}>
+                                {isVid ? (
+                                    <Video
+                                        src={assetSrc}
+                                        style={{
+                                            width: "100%",
+                                            height: "100%",
+                                            objectFit: "cover",
+                                        }}
+                                        muted // Muted because we have a separate audio track
+                                    />
+                                ) : (
+                                    <Img
+                                        src={assetSrc}
+                                        style={{
+                                            width: "100%",
+                                            height: "100%",
+                                            objectFit: "cover",
+                                        }}
+                                    />
+                                )}
+                            </Series.Sequence>
+                        );
+                    })}
                 </Series>
             </div>
 
@@ -92,8 +117,8 @@ export const Scene: React.FC<SceneProps & { isFirst?: boolean; transitionFrames?
                 }}
             />
 
-            {/* Shared audio for all images in this scene */}
-            {audio && <Audio src={audio} />}
+            {/* Shared audio for all assets in this scene */}
+            {audio && <Audio src={audio.startsWith("http") ? audio : staticFile(audio)} />}
         </AbsoluteFill>
     );
 };

@@ -10,7 +10,7 @@ export const TransitionTypeSchema = z.enum([
 ]).default("fade");
 
 export const SceneSchema = z.object({
-    images: z.array(z.string()), // Support for multiple images per scene segment
+    assets: z.array(z.string()), // Support for multiple assets (images or videos) per scene segment
     audio: z.string(),
     durationInSeconds: z.number(),
     zoomDirection: z.enum(["in", "out", "left-to-right", "right-to-left", "still"]).default("in"),

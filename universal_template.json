@@ -1,27 +1,26 @@
 {
     "scenes": [
         {
-            "images": [
-                "URL_VƏ_YA_YOL_1",
-                "URL_VƏ_YA_YOL_2"
+            "assets": [
+                "https://remotion-assets.s3.eu-central-1.amazonaws.com/found-the-f-1.png",
+                "https://remotion-assets.s3.eu-central-1.amazonaws.com/found-the-f-2.png"
             ],
-            "audio": "VOICEOVER_HISSƏ_1.mp3",
+            "audio": "https://remotion-assets.s3.eu-central-1.amazonaws.com/remotion-intro.mp3",
             "durationInSeconds": 10,
             "zoomDirection": "in"
         },
         {
-            "images": [
-                "URL_VƏ_YA_YOL_3"
+            "assets": [
+                "path/to/your/video.mp4"
             ],
             "audio": "VOICEOVER_HISSƏ_2.mp3",
             "durationInSeconds": 5,
-            "zoomDirection": "left-to-right"
+            "zoomDirection": "still"
         },
         {
-            "images": [
+            "assets": [
                 "URL_VƏ_YA_YOL_4",
-                "URL_VƏ_YA_YOL_5",
-                "URL_VƏ_YA_YOL_6"
+                "URL_VƏ_YA_YOL_5"
             ],
             "audio": "VOICEOVER_HISSƏ_3.mp3",
             "durationInSeconds": 15,

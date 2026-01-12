@@ -1,3 +1,4 @@
+import React from "react";
 import { Composition } from "remotion";
 import { CineVideo } from "./CineVideo";
 import { CineVideoSchema, CineVideoProps } from "./schema";
@@ -29,7 +30,7 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{
           scenes: [
             {
-              image: "https://remotion-assets.s3.eu-central-1.amazonaws.com/found-the-f-1.png",
+              assets: ["https://remotion-assets.s3.eu-central-1.amazonaws.com/found-the-f-1.png"],
               audio: "https://remotion-assets.s3.eu-central-1.amazonaws.com/remotion-intro.mp3",
               durationInSeconds: 5,
               zoomDirection: "in",
