@@ -23,10 +23,10 @@ remotion_image = (
     .add_local_dir(".", remote_path="/app", copy=True)
     .workdir("/app")
     .run_commands(
-        "rm -rf node_modules", # Yerli kopyalanmış node_modules-u silirik
+        "rm -rf node_modules",
         "npm install",
-        "npx @remotion/cli browser ensure",
-        "npx @remotion/cli bundle remotion/index.ts build/bundle.js"
+        "./node_modules/.bin/remotion browser ensure",
+        "./node_modules/.bin/remotion bundle remotion/index.ts build/bundle.js"
     )
     .pip_install("google-api-python-client", "google-auth", "google-auth-oauthlib", "google-auth-httplib2", "fastapi")
     .env({"REMOTION_IGNORE_MEMORY_CHECK": "true"})
@@ -94,7 +94,7 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
     try:
         # Remotion CLI render
         result = subprocess.run([
-            "npx", "@remotion/cli", "render",
+            "./node_modules/.bin/remotion", "render",
             "remotion/index.ts",
             "CineVideo",
             output_path,
