@@ -32,7 +32,7 @@ jobs:
           modal token set --token-id $MODAL_TOKEN_ID --token-secret $MODAL_TOKEN_SECRET
           python -c '
           import modal, json
-          f = modal.Function.lookup("remotion-video-service", "render_video")
+          f = modal.Function.from_name("remotion-video-service", "render_video")
           with open("universal_template.json", "r") as j: data = json.load(j)
           print("Buluddakı servis çağırılır...")
           video_bytes = f.remote(data, upload_gdrive=${{ github.event.inputs.upload_gdrive }})
