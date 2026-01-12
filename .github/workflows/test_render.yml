@@ -1,0 +1,41 @@
+name: Manual Test Render
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_gdrive:
+        description: 'Google Drive-a yüklənsin?'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  test_render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install modal
+
+      - name: Trigger Render on Modal
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: |
+          modal token set --token-id $MODAL_TOKEN_ID --token-secret $MODAL_TOKEN_SECRET
+          # modal_app.py daxilindəki local testi işlədirik
+          # Bu həm də videonu modal_result.mp4 olaraq bura endirəcək
+          python modal_app.py
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-video
+          path: modal_result.mp4

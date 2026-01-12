@@ -30,55 +30,88 @@ remotion_image = (
         "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
         "apt-get install -y nodejs"
     )
-    .add_local_dir(".", remote_path="/app")
+    .add_local_dir(".", remote_path="/app", copy=True)
     .workdir("/app")
     .run_commands(
         "npm install",
         "npx remotion browser ensure",
         "npx remotion bundle remotion/index.ts build/bundle.js"
     )
+    .pip_install("google-api-python-client", "google-auth", "google-auth-oauthlib", "google-auth-httplib2")
 )
+
+def upload_to_gdrive(file_path: str, filename: str):
+    """
+    Google Drive-a fayl yükləyir.
+    """
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
+    from google.oauth2 import service_account
+
+    creds_json = os.environ.get("GDRIVE_SERVICE_ACCOUNT_JSON")
+    if not creds_json:
+        print("GDRIVE_SERVICE_ACCOUNT_JSON tapılmadı, upload ləğv edildi.")
+        return None
+
+    try:
+        info = json.loads(creds_json)
+        creds = service_account.Credentials.from_service_account_info(info)
+        service = build('drive', 'v3', credentials=creds)
+
+        folder_id = "1aYD8R1ZE1L9HQZudXQMOhwoqEOYkxaGS"
+        file_metadata = {
+            'name': filename,
+            'parents': [folder_id]
+        }
+        media = MediaFileUpload(file_path, mimetype='video/mp4', resumable=True)
+        file = service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+        print(f"GDrive Upload Uğurlu! File ID: {file.get('id')}")
+        return file.get('id')
+    except Exception as e:
+        print(f"GDrive Upload Xətası: {str(e)}")
+        return None
 
 # Render funksiyası
 @app.function(
     image=remotion_image,
-    cpu=16, # Güclü CPU seçimi (Hərəkətli və sürətli render üçün)
-    memory=32768, # 32GB RAM
-    timeout=1200, # 20 dəqiqə limit
-    container_idle_timeout=60,
+    cpu=16,
+    memory=32768,
+    timeout=1200,
+    secrets=[
+        modal.Secret.from_name("videomaker-secrets")
+    ]
 )
-def render_video(input_data: dict):
+def render_video(input_data: dict, upload_gdrive: bool = False):
     """
-    JSON datası əsasında videonu render edir və nəticəni qaytarır.
+    JSON datası əsasında videonu render edir.
     """
-    job_id = "modal_render_" + str(os.getpid())
+    import time
+    job_id = f"render_{int(time.time())}"
     input_path = f"/tmp/{job_id}_input.json"
     output_path = f"/tmp/{job_id}.mp4"
 
-    # Input datanı müvəqqəti fayla yazırıq
     with open(input_path, "w") as f:
         json.dump(input_data, f)
 
     print(f"Render başladı: {job_id}")
     
     try:
-        # Remotion CLI vasitəsilə render əmri
-        # --concurrency bayrağı CPU sayına görə paralel renderi təmin edir
         result = subprocess.run([
             "npx", "remotion", "render",
-            "build/bundle.js", # BUNDLE_URL
-            "CineVideo",       # Composition ID
+            "build/bundle.js",
+            "CineVideo",
             output_path,
             "--props", input_path,
-            "--concurrency", "16", # CPU sayına uyğun
-            "--browser-executable", "/usr/bin/google-chrome-stable" # Modal-da yerləşən brauzer
+            "--concurrency", "16"
         ], capture_output=True, text=True)
 
         if result.returncode != 0:
             print(f"Render Xətası: {result.stderr}")
             raise Exception(f"Remotion Error: {result.stderr}")
 
-        # Hazır videonu oxuyub binary olaraq qaytarırıq
+        if upload_gdrive:
+            upload_to_gdrive(output_path, f"{job_id}.mp4")
+
         with open(output_path, "rb") as f:
             video_bytes = f.read()
         
@@ -88,19 +121,19 @@ def render_video(input_data: dict):
         print(f"Sistem Xətası: {str(e)}")
         raise e
     finally:
-        # Təmizlik
         if os.path.exists(input_path): os.remove(input_path)
         if os.path.exists(output_path): os.remove(output_path)
 
 # Web Endpoint (Kənardan çağırmaq üçün)
 @app.function(image=remotion_image)
 @modal.web_endpoint(method="POST")
-async def api_render(item: dict):
+async def api_render(item: dict, upload: bool = False):
     """
     Xarici API vasitəsilə renderi tətikləyir.
+    `upload=true` parametrini keçərsəniz həm də GDrive-a yükləyər.
     """
     try:
-        video_content = render_video.remote(item)
+        video_content = render_video.remote(item, upload_gdrive=upload)
         return modal.Response(
             content=video_content,
             media_type="video/mp4"
