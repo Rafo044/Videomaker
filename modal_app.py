@@ -97,16 +97,18 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
     
     try:
         # Remotion CLI render
+        # --ignore-memory-limit-check: Modal-dakı yaddaş uyğunsuzluğu xətasını keçir
+        # --disable-web-security: Assetlərin daha rahat yüklənməsi üçün
         result = subprocess.run([
             "npx", "remotion", "render",
             "build/bundle.js",
             "CineVideo",
             output_path,
             "--props", input_path,
-            "--concurrency", "4", # 16-dan 4-ə endirildi (yaddaş xətası üçün)
-            "--timeout", "120000", # 120 saniyə (delayRender üçün)
-            "--browser-executable", "/app/node_modules/.remotion/chrome-headless-shell/linux64/chrome-headless-shell-linux64/chrome-headless-shell",
-            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
+            "--concurrency", "8",
+            "--timeout", "120000",
+            "--ignore-memory-limit-check",
+            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-web-security"
         ], capture_output=True, text=True)
 
         if result.returncode != 0:
