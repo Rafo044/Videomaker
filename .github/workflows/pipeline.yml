@@ -1,0 +1,116 @@
+name: Smart Video Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Məcburi Deploy?'
+        type: boolean
+        default: false
+      upload_gdrive:
+        description: 'Gdrive-a yüklənsin?'
+        type: boolean
+        default: false
+
+jobs:
+  ci-cd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect Changes
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            code:
+              - 'modal_app.py'
+              - 'remotion/**'
+              - 'package.json'
+            json:
+              - '*.json'
+              - '!package*.json'
+              - '!tsconfig.json'
+
+      - name: Set up Python
+        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.json == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Modal
+        if: steps.filter.outputs.code == 'true' || steps.filter.outputs.json == 'true' || github.event_name == 'workflow_dispatch'
+        run: pip install modal
+
+      - name: Deploy to Modal
+        if: steps.filter.outputs.code == 'true' || github.event.inputs.force_deploy == 'true'
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: |
+          modal token set --token-id $MODAL_TOKEN_ID --token-secret $MODAL_TOKEN_SECRET
+          modal deploy modal_app.py
+
+      - name: Render All JSON Templates
+        if: steps.filter.outputs.json == 'true' || steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+          GDRIVE_UPLOAD: ${{ github.event.inputs.upload_gdrive || 'false' }}
+        run: |
+          modal token set --token-id $MODAL_TOKEN_ID --token-secret $MODAL_TOKEN_SECRET
+          python -c '
+          import modal, json, os, glob
+          from pathlib import Path
+          
+          # 1. Servisi tapırıq
+          try:
+              f = modal.Function.from_name("remotion-video-service", "render_video")
+          except Exception as e:
+              print(f"Xəta: Servis tapılmadı! Əvvəlcə deploy etməlisiniz. {e}")
+              exit(1)
+
+          # 2. Bütün uyğun JSON fayllarını tapırıq (sistem faylları xaric)
+          exclude = ["package.json", "package-lock.json", "tsconfig.json"]
+          json_files = [f for f in glob.glob("*.json") if f not in exclude]
+          
+          if not json_files:
+              print("Render üçün JSON faylı tapılmadı.")
+              exit(0)
+
+          os.makedirs("renders", exist_ok=True)
+          upload_flag = os.getenv("GDRIVE_UPLOAD", "false").lower() == "true"
+          
+          print(f"Toplam {len(json_files)} fayl emal olunacaq...")
+
+          # 3. SIRALI olaraq (sequential) hər birini render edirik
+          for json_file in sorted(json_files):
+              output_name = f"renders/{Path(json_file).stem}.mp4"
+              print(f"\n>>> İşlənir: {json_file}")
+              
+              with open(json_file, "r") as j:
+                  data = json.load(j)
+              
+              # f.remote() burada cavab gələnə qədər gözləyəcək (blocking)
+              video_bytes = f.remote(data, upload_gdrive=upload_flag)
+              
+              with open(output_name, "wb") as out:
+                  out.write(video_bytes)
+              
+              print(f"<<< Tamamlandı: {output_name}")
+          
+          print("\nBütün renderlər uğurla başa çatdı.")
+          '
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-rendered-videos
+          path: renders/*.mp4
+          if-no-files-found: ignore
