@@ -1,4 +1,4 @@
-# Modal App for Remotion Rendering - v1.0.8 (Caching Logic Fix)
+# Modal App for Remotion Rendering - v1.0.7 (Ultra-Fast Build & Render)
 import modal
 import os
 import json
@@ -17,8 +17,8 @@ remotion_image = (
         "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
         "apt-get install -y nodejs"
     )
-    # STEP A: Cache node_modules (must use copy=True to run commands safely after)
-    .add_local_file("package.json", "/app/package.json", copy=True)
+    # STEP A: Cache node_modules (only rebuilds if package.json changes)
+    .add_local_file("package.json", "/app/package.json")
     .workdir("/app")
     .run_commands("npm install")
     
