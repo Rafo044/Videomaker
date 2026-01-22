@@ -18,7 +18,7 @@ remotion_image = (
         "apt-get install -y nodejs"
     )
     # STEP A: Cache node_modules (only rebuilds if package.json changes)
-    .copy_local_file("package.json", "/app/package.json")
+    .add_local_file("package.json", "/app/package.json")
     .workdir("/app")
     .run_commands("npm install")
     
