@@ -22,7 +22,7 @@
             },
             "particles": {
                 "type": "rain",
-                "count": 30,
+                "count": 35,
                 "showAt": 0,
                 "hideAt": 5,
                 "color": "#ffffff"
