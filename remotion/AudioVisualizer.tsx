@@ -13,7 +13,7 @@ export const AudioVisualizer: React.FC<VisualizerProps> = ({
     const frame = useCurrentFrame();
     // Use frame for animation
 
-    const numBars = type === 'bars' ? 40 : 100;
+    const numElements = type === 'bars' ? 50 : 80;
 
     const renderBars = () => {
         return (
@@ -22,16 +22,15 @@ export const AudioVisualizer: React.FC<VisualizerProps> = ({
                 alignItems: 'flex-end',
                 justifyContent: 'center',
                 gap: `${gap}px`,
-                height: '200px',
+                height: '150px',
                 width: '100%',
                 opacity: opacity
             }}>
-                {Array.from({ length: numBars }).map((_, i) => {
-                    // Create a pseudo-random animation based on frame and index
-                    const offset = i * 0.2;
-                    const value = Math.sin(frame / 5 + offset) * 0.5 + 0.5;
-                    const noise = Math.sin(frame / 2 + i) * 0.2;
-                    const h = interpolate(value + noise, [0, 1], [10, 150]);
+                {Array.from({ length: numElements }).map((_, i) => {
+                    const offset = i * 0.15;
+                    const value = Math.sin(frame / 8 + offset) * 0.5 + 0.5;
+                    const noise = Math.sin(frame / 3 + i) * 0.3;
+                    const h = interpolate(value + noise, [-0.3, 1.3], [10, 120], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
 
                     return (
                         <div
@@ -39,9 +38,45 @@ export const AudioVisualizer: React.FC<VisualizerProps> = ({
                             style={{
                                 width: `${barWidth}px`,
                                 height: `${h}px`,
+                                background: `linear-gradient(to top, ${color}33, ${color})`,
+                                borderRadius: '10px',
+                                boxShadow: h > 80 ? `0 0 15px ${color}44` : 'none',
+                                transition: 'height 0.1s ease-out'
+                            }}
+                        />
+                    );
+                })}
+            </div>
+        );
+    };
+
+    const renderDots = () => {
+        return (
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: `${gap * 1.5}px`,
+                height: '100px',
+                width: '100%',
+                opacity: opacity
+            }}>
+                {Array.from({ length: 30 }).map((_, i) => {
+                    const offset = i * 0.3;
+                    const value = Math.sin(frame / 10 + offset);
+                    const y = interpolate(value, [-1, 1], [-20, 20]);
+                    const s = interpolate(value, [-1, 1], [0.8, 1.2]);
+
+                    return (
+                        <div
+                            key={i}
+                            style={{
+                                width: `${barWidth * 1.5}px`,
+                                height: `${barWidth * 1.5}px`,
                                 backgroundColor: color,
-                                borderRadius: '4px',
-                                boxShadow: `0 0 15px ${color}66`
+                                borderRadius: '50%',
+                                transform: `translateY(${y}px) scale(${s})`,
+                                boxShadow: `0 0 10px ${color}88`,
                             }}
                         />
                     );
@@ -54,16 +89,16 @@ export const AudioVisualizer: React.FC<VisualizerProps> = ({
         switch (position) {
             case 'center': return { justifyContent: 'center', alignItems: 'center' };
             case 'top': return { justifyContent: 'flex-start', alignItems: 'center', paddingTop: '10%' };
-            case 'bottom-right': return { justifyContent: 'flex-end', alignItems: 'flex-end', padding: '5%' };
-            case 'bottom-left': return { justifyContent: 'flex-end', alignItems: 'flex-start', padding: '5%' };
+            case 'bottom-right': return { justifyContent: 'flex-end', alignItems: 'flex-end', padding: '8%' };
+            case 'bottom-left': return { justifyContent: 'flex-end', alignItems: 'flex-start', padding: '8%' };
             case 'bottom':
-            default: return { justifyContent: 'flex-end', alignItems: 'center', paddingBottom: '10%' };
+            default: return { justifyContent: 'flex-end', alignItems: 'center', paddingBottom: '12%' };
         }
     };
 
     return (
         <AbsoluteFill style={{ ...getPositionStyle(), pointerEvents: 'none' }}>
-            {type === 'bars' && renderBars()}
+            {type === 'dots' ? renderDots() : renderBars()}
         </AbsoluteFill>
     );
 };

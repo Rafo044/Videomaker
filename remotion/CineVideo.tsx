@@ -64,16 +64,32 @@ export const CineVideo: React.FC<CineVideoProps> = ({
             </TransitionSeries>
 
             {watermark && (
-                <AbsoluteFill style={{ justifyContent: watermark.position.includes('top') ? 'flex-start' : 'flex-end', alignItems: watermark.position.includes('left') ? 'flex-start' : 'flex-end', padding: '3%', pointerEvents: 'none' }}>
-                    {/* Added a subtle pulse effect for Lofi vibes */}
-                    <div style={{ transform: `scale(${1 + Math.sin(frame / 20) * 0.05})` }}>
+                <AbsoluteFill style={{
+                    justifyContent: watermark.position.includes('top') ? 'flex-start' : 'flex-end',
+                    alignItems: watermark.position.includes('left') ? 'flex-start' : 'flex-end',
+                    padding: '40px',
+                    pointerEvents: 'none'
+                }}>
+                    <div style={{
+                        transform: `scale(${1 + Math.sin(frame / 25) * 0.03})`,
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        backdropFilter: 'blur(12px) saturate(180%)',
+                        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
+                        padding: '20px',
+                        borderRadius: '24px',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                    }}>
                         <Img
                             src={watermark.imageUrl.startsWith('http') ? watermark.imageUrl : staticFile(watermark.imageUrl)}
                             style={{
-                                width: `${(watermark.scale || 1) * 150}px`,
-                                opacity: watermark.opacity || 0.7,
-                                borderRadius: '15px', // Lofi often uses rounded logos
-                                boxShadow: '0 0 20px rgba(0,0,0,0.3)'
+                                width: `${(watermark.scale || 1) * 120}px`,
+                                height: 'auto',
+                                opacity: watermark.opacity || 0.9,
+                                filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.2))'
                             }}
                         />
                     </div>

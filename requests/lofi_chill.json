@@ -12,56 +12,56 @@
     "scenes": [
         {
             "assets": [
-                "https://picsum.photos/seed/lofi1/1920/1080"
+                "https://picsum.photos/seed/lofi3/1920/1080"
             ],
-            "durationInSeconds": 8,
+            "durationInSeconds": 10,
             "kenBurns": {
-                "startScale": 1.1,
-                "endScale": 1.0,
-                "easing": "linear"
+                "startScale": 1.15,
+                "endScale": 1.05,
+                "easing": "easeOut"
             },
             "particles": {
                 "type": "rain",
-                "count": 40,
+                "count": 45,
                 "showAt": 0,
-                "hideAt": 8,
+                "hideAt": 10,
                 "color": "#ffffff"
             },
             "visualizer": {
-                "type": "bars",
-                "color": "#6366f1",
+                "type": "dots",
+                "color": "#ffffff",
                 "position": "bottom",
-                "opacity": 0.5
+                "opacity": 0.8
             },
             "titleCard": {
-                "text": "Midnight Sessions",
-                "subtitle": "Relaxing Lofi Beats",
+                "text": "Premium Lofi",
+                "subtitle": "Relax & Focus",
                 "animation": "fade",
                 "position": "center",
                 "showAt": 1,
-                "hideAt": 5
+                "hideAt": 6
             },
             "transitionAfter": "fade",
-            "transitionDuration": 1
+            "transitionDuration": 1.5
         },
         {
             "assets": [
-                "https://picsum.photos/seed/lofi2/1920/1080"
+                "https://picsum.photos/seed/lofi4/1920/1080"
             ],
-            "durationInSeconds": 8,
-            "zoomDirection": "left-to-right",
+            "durationInSeconds": 10,
+            "zoomDirection": "in",
             "particles": {
                 "type": "sparkles",
-                "count": 25,
+                "count": 30,
                 "showAt": 0,
-                "hideAt": 8,
-                "color": "#fcd34d"
+                "hideAt": 10,
+                "color": "#ffffff"
             },
             "visualizer": {
-                "type": "bars",
-                "color": "#f43f5e",
+                "type": "dots",
+                "color": "#ffffff",
                 "position": "bottom",
-                "opacity": 0.4
+                "opacity": 0.7
             }
         }
     ]

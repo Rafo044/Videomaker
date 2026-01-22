@@ -1,4 +1,4 @@
-# Modal App for Remotion Rendering - v1.0.2 (Public Assets Fix)
+# Modal App for Remotion Rendering - v1.0.3 (Premium Design Update)
 import modal
 import os
 import json
