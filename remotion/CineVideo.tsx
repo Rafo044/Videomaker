@@ -76,19 +76,21 @@ export const CineVideo: React.FC<CineVideoProps> = ({
                     }}>
                         {watermark.text ? (
                             <div style={{
-                                fontSize: `${(watermark.scale || 1) * 40}px`,
-                                fontWeight: 'bold',
+                                fontSize: `${(watermark.scale || 1) * 44}px`,
+                                fontWeight: '900',
                                 color: 'white',
                                 fontFamily: 'Inter, sans-serif',
                                 textTransform: 'uppercase',
-                                letterSpacing: '4px',
-                                background: 'rgba(255, 255, 255, 0.1)',
-                                backdropFilter: 'blur(8px)',
-                                padding: '15px 30px',
-                                borderRadius: '12px',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                opacity: watermark.opacity || 0.9,
-                                textShadow: '0 0 10px rgba(0,0,0,0.5)'
+                                letterSpacing: '6px',
+                                background: 'rgba(0, 0, 0, 0.4)',
+                                backdropFilter: 'blur(16px) saturate(180%)',
+                                WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+                                padding: '12px 32px',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                opacity: watermark.opacity || 0.95,
+                                textShadow: '0 2px 10px rgba(0,0,0,0.8)',
+                                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                             }}>
                                 {watermark.text}
                             </div>

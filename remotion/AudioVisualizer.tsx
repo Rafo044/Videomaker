@@ -77,9 +77,9 @@ export const AudioVisualizer: React.FC<VisualizerProps> = ({
                                 backgroundColor: color,
                                 borderRadius: '50%',
                                 transform: `translate(${drift}px, ${y}px) scale(${s})`,
-                                boxShadow: `0 0 15px 2px ${color}`,
-                                opacity: interpolate(value, [-1, 1], [0.3, 1]),
-                                filter: 'blur(0.5px)'
+                                boxShadow: `0 0 15px 2px ${color}, 0 0 2px 1px rgba(0,0,0,0.8)`, // Inner glow + outer dark rim
+                                opacity: interpolate(value, [-1, 1], [0.4, 1]),
+                                filter: 'blur(0.3px) contrast(1.2)'
                             }}
                         />
                     );

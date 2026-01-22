@@ -14,7 +14,7 @@
             "assets": [
                 "https://picsum.photos/seed/lofi3/1920/1080"
             ],
-            "durationInSeconds": 18,
+            "durationInSeconds": 19,
             "kenBurns": {
                 "startScale": 1.15,
                 "endScale": 1.05,
