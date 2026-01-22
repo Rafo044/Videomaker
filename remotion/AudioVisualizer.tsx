@@ -56,27 +56,30 @@ export const AudioVisualizer: React.FC<VisualizerProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: `${gap * 1.5}px`,
-                height: '100px',
+                gap: `${gap * 2}px`,
+                height: '120px',
                 width: '100%',
                 opacity: opacity
             }}>
-                {Array.from({ length: 30 }).map((_, i) => {
-                    const offset = i * 0.3;
-                    const value = Math.sin(frame / 10 + offset);
-                    const y = interpolate(value, [-1, 1], [-20, 20]);
-                    const s = interpolate(value, [-1, 1], [0.8, 1.2]);
+                {Array.from({ length: 40 }).map((_, i) => {
+                    const offset = i * 0.4;
+                    const value = Math.sin(frame / 12 + offset);
+                    const y = interpolate(value, [-1, 1], [-25, 25]);
+                    const s = interpolate(value, [-1, 1], [0.7, 1.3]);
+                    const drift = Math.sin(frame / 20 + i) * 10;
 
                     return (
                         <div
                             key={i}
                             style={{
-                                width: `${barWidth * 1.5}px`,
-                                height: `${barWidth * 1.5}px`,
+                                width: `${barWidth * 1.2}px`,
+                                height: `${barWidth * 1.2}px`,
                                 backgroundColor: color,
                                 borderRadius: '50%',
-                                transform: `translateY(${y}px) scale(${s})`,
-                                boxShadow: `0 0 10px ${color}88`,
+                                transform: `translate(${drift}px, ${y}px) scale(${s})`,
+                                boxShadow: `0 0 15px 2px ${color}`,
+                                opacity: interpolate(value, [-1, 1], [0.3, 1]),
+                                filter: 'blur(0.5px)'
                             }}
                         />
                     );

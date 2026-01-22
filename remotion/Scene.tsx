@@ -106,9 +106,9 @@ export const Scene: React.FC<SceneProps & { transitionFrames: number }> = ({
         <AbsoluteFill style={{ backgroundColor: '#000' }}>
             <AbsoluteFill style={{ opacity, ...getTransform() }}>
                 {isVideoAsset ? (
-                    <Video src={assetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} startFrom={videoPlayback?.startFrom ? Math.round(videoPlayback.startFrom * fps) : 0} endAt={videoPlayback?.endAt ? Math.round(videoPlayback.endAt * fps) : durationFrames} volume={0} muted={true} loop={videoPlayback?.loop || false} />
+                    <Video src={assetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.1) brightness(0.9) saturate(0.8) sepia(0.1)' }} startFrom={videoPlayback?.startFrom ? Math.round(videoPlayback.startFrom * fps) : 0} endAt={videoPlayback?.endAt ? Math.round(videoPlayback.endAt * fps) : durationFrames} volume={0} muted={true} loop={videoPlayback?.loop || false} />
                 ) : (
-                    <Img src={assetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <Img src={assetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.1) brightness(0.9) saturate(0.8) sepia(0.1)' }} />
                 )}
             </AbsoluteFill>
 
@@ -120,6 +120,41 @@ export const Scene: React.FC<SceneProps & { transitionFrames: number }> = ({
             {particles && <ParticleSystem {...particles} fps={fps} />}
             {chart && <Chart {...chart} fps={fps} />}
             {visualizer && <AudioVisualizer {...visualizer} />}
+
+            {/* Aesthetic Overlays */}
+            <AbsoluteFill style={{
+                pointerEvents: 'none',
+                background: 'radial-gradient(circle, transparent 20%, rgba(0,0,0,0.4) 100%)',
+                mixBlendMode: 'multiply'
+            }} />
+
+            {/* VHS Grain Effect */}
+            <AbsoluteFill style={{
+                pointerEvents: 'none',
+                opacity: 0.05,
+                background: `url('https://re-motion.s3.amazonaws.com/grain.png')`,
+                backgroundSize: '200px',
+            }} />
+
+            {/* Digital Timestamp Counter */}
+            <div style={{
+                position: 'absolute',
+                bottom: '40px',
+                left: '60px',
+                color: 'white',
+                fontFamily: 'monospace',
+                fontSize: '24px',
+                opacity: 0.6,
+                textShadow: '0 0 10px rgba(255,255,255,0.5)'
+            }}>
+                REC  ●  {new Array(3).fill(0).map((_, i) => {
+                    const time = Math.floor(frame / fps);
+                    const h = Math.floor(time / 3600).toString().padStart(2, '0');
+                    const m = Math.floor((time % 3600) / 60).toString().padStart(2, '0');
+                    const s = (time % 60).toString().padStart(2, '0');
+                    return `${h}:${m}:${s}`;
+                })[0]}
+            </div>
 
             {audio && <Audio src={audio} volume={audioVolume} />}
         </AbsoluteFill>
