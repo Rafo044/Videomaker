@@ -1,10 +1,10 @@
-# Modal App for Remotion Rendering - v1.0.7 (Ultra-Fast Build & Render)
+# Modal App for Remotion Rendering - v1.0.9 (Simple & Robust)
 import modal
 import os
 import json
 import subprocess
 
-# 1. Optimized Base Image
+# 1. Base Image - Robust and Simple
 remotion_image = (
     modal.Image.debian_slim()
     .apt_install(
@@ -17,18 +17,12 @@ remotion_image = (
         "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
         "apt-get install -y nodejs"
     )
-    # STEP A: Cache node_modules (only rebuilds if package.json changes)
-    .add_local_file("package.json", "/app/package.json")
+    .add_local_dir(".", remote_path="/app", copy=True)
     .workdir("/app")
-    .run_commands("npm install")
-    
-    # STEP B: Copy source code (excluding dynamic folders to prevent cache invalidation)
-    .add_local_dir(".", remote_path="/app", copy=True, ignore=["requests", "renders", "templates_backup", ".github", ".git"])
-    
-    # STEP C: Pre-bundle once during build
     .run_commands(
-        "./node_modules/.bin/remotion browser ensure",
-        "./node_modules/.bin/remotion bundle remotion/index.ts build/bundle.js"
+        "rm -rf node_modules",
+        "npm install",
+        "./node_modules/.bin/remotion browser ensure"
     )
     .env({"REMOTION_IGNORE_MEMORY_CHECK": "true"})
 )
@@ -64,7 +58,7 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
         # We return the video bytes even if upload_gdrive is requested (to be handled by GitHub)
         result = subprocess.run([
             "./node_modules/.bin/remotion", "render",
-            "build/bundle.js", # Use the pre-bundled file
+            "remotion/index.ts",
             "CineVideo",
             output_path,
             "--props", input_path,
