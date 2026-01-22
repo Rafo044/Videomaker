@@ -1,4 +1,4 @@
-# Modal App for Remotion Rendering - v1.0.4 (Aesthetic Soul Update)
+# Modal App for Remotion Rendering - v1.0.6 (Text Logo Support)
 import modal
 import os
 import json

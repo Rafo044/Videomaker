@@ -131,7 +131,8 @@ export const EndScreenSchema = z.object({
 });
 
 export const WatermarkSchema = z.object({
-    imageUrl: z.string(),
+    imageUrl: z.string().optional(),
+    text: z.string().optional(),
     position: z.enum(['top-left', 'top-right', 'bottom-left', 'bottom-right']),
     opacity: z.number().min(0).max(1).optional(),
     scale: z.number().optional(),

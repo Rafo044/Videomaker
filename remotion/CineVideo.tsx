@@ -67,31 +67,47 @@ export const CineVideo: React.FC<CineVideoProps> = ({
                 <AbsoluteFill style={{
                     justifyContent: watermark.position.includes('top') ? 'flex-start' : 'flex-end',
                     alignItems: watermark.position.includes('left') ? 'flex-start' : 'flex-end',
-                    padding: '40px',
+                    padding: '50px',
                     pointerEvents: 'none'
                 }}>
                     <div style={{
-                        transform: `scale(${1 + Math.sin(frame / 25) * 0.03})`,
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        backdropFilter: 'blur(12px) saturate(180%)',
-                        WebkitBackdropFilter: 'blur(12px) saturate(180%)',
-                        padding: '20px',
-                        borderRadius: '24px',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center'
+                        transform: `scale(${1 + Math.sin(frame / 30) * 0.02})`,
+                        filter: 'drop-shadow(0 0 15px rgba(255,255,255,0.3))',
                     }}>
-                        <Img
-                            src={watermark.imageUrl.startsWith('http') ? watermark.imageUrl : staticFile(watermark.imageUrl)}
-                            style={{
-                                width: `${(watermark.scale || 1) * 120}px`,
-                                height: 'auto',
+                        {watermark.text ? (
+                            <div style={{
+                                fontSize: `${(watermark.scale || 1) * 40}px`,
+                                fontWeight: 'bold',
+                                color: 'white',
+                                fontFamily: 'Inter, sans-serif',
+                                textTransform: 'uppercase',
+                                letterSpacing: '4px',
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                backdropFilter: 'blur(8px)',
+                                padding: '15px 30px',
+                                borderRadius: '12px',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
                                 opacity: watermark.opacity || 0.9,
-                                filter: 'drop-shadow(0 0 5px rgba(255,255,255,0.2))'
-                            }}
-                        />
+                                textShadow: '0 0 10px rgba(0,0,0,0.5)'
+                            }}>
+                                {watermark.text}
+                            </div>
+                        ) : (
+                            watermark.imageUrl && (
+                                <Img
+                                    src={watermark.imageUrl.startsWith('http') ? watermark.imageUrl : staticFile(watermark.imageUrl)}
+                                    style={{
+                                        width: `${(watermark.scale || 1) * 160}px`,
+                                        height: `${(watermark.scale || 1) * 160}px`,
+                                        borderRadius: '50%',
+                                        border: '2px solid rgba(255, 255, 255, 0.4)',
+                                        objectFit: 'cover',
+                                        opacity: watermark.opacity || 0.95,
+                                        transition: 'all 0.3s ease'
+                                    }}
+                                />
+                            )
+                        )}
                     </div>
                 </AbsoluteFill>
             )}

@@ -4,17 +4,17 @@
     "backgroundMusicVolume": 0.15,
     "audioDucking": false,
     "watermark": {
-        "imageUrl": "logo/logo.jpg",
+        "text": "Rafelune",
         "position": "top-left",
         "opacity": 0.8,
-        "scale": 0.7
+        "scale": 0.8
     },
     "scenes": [
         {
             "assets": [
                 "https://picsum.photos/seed/lofi3/1920/1080"
             ],
-            "durationInSeconds": 12,
+            "durationInSeconds": 13,
             "kenBurns": {
                 "startScale": 1.15,
                 "endScale": 1.05,
