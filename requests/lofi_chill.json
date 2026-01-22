@@ -14,7 +14,7 @@
             "assets": [
                 "https://images.unsplash.com/photo-1516281703302-3e74dec11ba6?auto=format&fit=crop&w=1920&q=80"
             ],
-            "durationInSeconds": 5,
+            "durationInSeconds": 6,
             "kenBurns": {
                 "startScale": 1.1,
                 "endScale": 1.0,
