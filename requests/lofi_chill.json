@@ -12,9 +12,9 @@
     "scenes": [
         {
             "assets": [
-                "https://images.unsplash.com/photo-1516281703302-3e74dec11ba6?auto=format&fit=crop&w=1920&q=80"
+                "https://picsum.photos/seed/lofi1/1920/1080"
             ],
-            "durationInSeconds": 6,
+            "durationInSeconds": 8,
             "kenBurns": {
                 "startScale": 1.1,
                 "endScale": 1.0,
@@ -22,9 +22,9 @@
             },
             "particles": {
                 "type": "rain",
-                "count": 35,
+                "count": 40,
                 "showAt": 0,
-                "hideAt": 5,
+                "hideAt": 8,
                 "color": "#ffffff"
             },
             "visualizer": {
@@ -39,22 +39,22 @@
                 "animation": "fade",
                 "position": "center",
                 "showAt": 1,
-                "hideAt": 4
+                "hideAt": 5
             },
             "transitionAfter": "fade",
             "transitionDuration": 1
         },
         {
             "assets": [
-                "https://images.unsplash.com/photo-1493238792000-811347027705?auto=format&fit=crop&w=1920&q=80"
+                "https://picsum.photos/seed/lofi2/1920/1080"
             ],
-            "durationInSeconds": 5,
+            "durationInSeconds": 8,
             "zoomDirection": "left-to-right",
             "particles": {
                 "type": "sparkles",
-                "count": 20,
+                "count": 25,
                 "showAt": 0,
-                "hideAt": 5,
+                "hideAt": 8,
                 "color": "#fcd34d"
             },
             "visualizer": {

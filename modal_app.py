@@ -1,4 +1,4 @@
-# Modal App for Remotion Rendering - v1.0.1 (Force Deploy)
+# Modal App for Remotion Rendering - v1.0.2 (Public Assets Fix)
 import modal
 import os
 import json
