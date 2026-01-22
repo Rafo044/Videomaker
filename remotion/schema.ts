@@ -87,6 +87,16 @@ export const ChartSchema = z.object({
     position: z.enum(['left', 'center', 'right']).optional(),
 });
 
+// Audio Visualizer
+export const AudioVisualizerSchema = z.object({
+    type: z.enum(['bars', 'wave', 'circle', 'dots']),
+    color: z.string().optional(),
+    gap: z.number().optional(),
+    barWidth: z.number().optional(),
+    position: z.enum(['bottom', 'center', 'top', 'bottom-right', 'bottom-left']).optional(),
+    opacity: z.number().optional(),
+});
+
 export const SceneSchema = z.object({
     assets: z.array(z.string()),
     audio: z.string().nullable().optional(),
@@ -104,6 +114,7 @@ export const SceneSchema = z.object({
     progressBar: ProgressBarSchema.optional(),
     particles: ParticleEffectSchema.optional(),
     chart: ChartSchema.optional(),
+    visualizer: AudioVisualizerSchema.optional(),
 
     transitionAfter: TransitionTypeSchema.optional(),
     transitionDuration: z.number().optional(),
@@ -147,5 +158,6 @@ export type LowerThird = z.infer<typeof LowerThirdSchema>;
 export type ProgressBar = z.infer<typeof ProgressBarSchema>;
 export type ParticleEffect = z.infer<typeof ParticleEffectSchema>;
 export type Chart = z.infer<typeof ChartSchema>;
+export type AudioVisualizer = z.infer<typeof AudioVisualizerSchema>;
 export type EndScreen = z.infer<typeof EndScreenSchema>;
 export type Watermark = z.infer<typeof WatermarkSchema>;

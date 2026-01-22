@@ -33,9 +33,9 @@ app = modal.App("remotion-video-service")
 # 2. Simplified Render Function (Offloading GDrive to GitHub Actions)
 @app.function(
     image=remotion_image,
-    cpu=16,
-    memory=32768,
-    timeout=1200
+    cpu=32,
+    memory=65536,
+    timeout=7200 # 2 hours timeout for long Lofi videos
 )
 def render_video(input_data: dict, upload_gdrive: bool = False):
     """
@@ -63,8 +63,8 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
             "CineVideo",
             output_path,
             "--props", input_path,
-            "--concurrency", "4",
-            "--timeout", "240000",
+            "--concurrency", "16",
+            "--timeout", "7200000",
             "--ignore-memory-limit-check",
             "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
         ], capture_output=True, text=True, env=env)

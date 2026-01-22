@@ -4,6 +4,7 @@ import { SceneProps } from './schema';
 import { ProgressBar } from './ProgressBar';
 import { ParticleSystem } from './ParticleSystem';
 import { Chart } from './Chart';
+import { AudioVisualizer } from './AudioVisualizer';
 
 const isVideo = (url: string): boolean => {
     return /\.(mp4|webm|mov|avi)$/i.test(url);
@@ -21,7 +22,7 @@ const getEasingFunction = (easing?: string) => {
 
 export const Scene: React.FC<SceneProps & { transitionFrames: number }> = ({
     assets, audio, durationInSeconds, zoomDirection, kenBurns, videoPlayback,
-    titleCard, subtitles, lowerThird, progressBar, particles, chart, transitionFrames
+    titleCard, subtitles, lowerThird, progressBar, particles, chart, visualizer, transitionFrames
 }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
@@ -118,6 +119,7 @@ export const Scene: React.FC<SceneProps & { transitionFrames: number }> = ({
             {progressBar && <ProgressBar {...progressBar} fps={fps} />}
             {particles && <ParticleSystem {...particles} fps={fps} />}
             {chart && <Chart {...chart} fps={fps} />}
+            {visualizer && <AudioVisualizer {...visualizer} />}
 
             {audio && <Audio src={audio} volume={audioVolume} />}
         </AbsoluteFill>
