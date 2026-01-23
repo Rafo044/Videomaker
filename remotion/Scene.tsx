@@ -108,10 +108,27 @@ export const Scene: React.FC<SceneProps & { transitionFrames: number }> = ({
     return (
         <AbsoluteFill style={{ backgroundColor: '#0a0a0a' }}>
             <AbsoluteFill style={{ opacity, ...getTransform() }}>
-                {isVideoAsset ? (
-                    <Video src={assetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.1) brightness(0.9) saturate(0.8) sepia(0.1)' }} startFrom={videoPlayback?.startFrom ? Math.round(videoPlayback.startFrom * fps) : 0} endAt={videoPlayback?.endAt ? Math.round(videoPlayback.endAt * fps) : durationFrames} volume={0} muted={true} loop={videoPlayback?.loop || false} />
+                {assetUrl ? (
+                    isVideoAsset ? (
+                        <Video
+                            src={assetUrl}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.1) brightness(0.9) saturate(0.8) sepia(0.1)' }}
+                            startFrom={videoPlayback?.startFrom ? Math.round(videoPlayback.startFrom * fps) : 0}
+                            endAt={videoPlayback?.endAt ? Math.round(videoPlayback.endAt * fps) : durationFrames}
+                            volume={0}
+                            muted={true}
+                            loop={videoPlayback?.loop || false}
+                        />
+                    ) : (
+                        <Img
+                            src={assetUrl.startsWith('http') || assetUrl.startsWith('/') || assetUrl.startsWith('data:') ? assetUrl : staticFile(assetUrl)}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.1) brightness(0.9) saturate(0.8) sepia(0.1)' }}
+                        />
+                    )
                 ) : (
-                    <Img src={assetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.1) brightness(0.9) saturate(0.8) sepia(0.1)' }} />
+                    <div style={{ width: '100%', height: '100%', backgroundColor: '#1a1a1a', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                        <span style={{ color: '#444', fontSize: '24px' }}>[No Asset]</span>
+                    </div>
                 )}
             </AbsoluteFill>
 

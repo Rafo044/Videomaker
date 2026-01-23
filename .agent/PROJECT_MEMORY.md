@@ -31,3 +31,4 @@
 
 - **[2026-01-23 22:25]**: Layihə adı "Rafelune" olaraq təsdiqləndi. `PROMPTS.md`-də vatermark yeniləndi. PROJECT_MEMORY faylına sərt xəbərdarlıq və loq sistemi əlavə edildi.
 - **[2026-01-23 22:40]**: Easing adlandırması unifikasiya edildi. Sxem və Komponent həm `easeInOut`, həm də `ease-in-out` formatlarını dəstəkləyir.
+- **[2026-01-23 22:50]**: `Scene.tsx` daxilində asset (şəkil/video) URL-i boş gəldikdə renderin çökməsinin qarşısı alındı (No src prop fix).
