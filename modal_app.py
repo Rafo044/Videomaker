@@ -42,18 +42,21 @@ app = modal.App("remotion-video-service")
 def render_video(input_data: dict, upload_gdrive: bool = False):
     job_id = f"job_{int(time.time())}"
     input_path = f"/tmp/{job_id}_input.json"
-    bundle_path = f"/tmp/{job_id}_bundle.js"
+    bundle_path = f"./{job_id}_bundle.js"
     results = {}
 
     with open(input_path, "w") as f:
         json.dump(input_data, f)
 
+    # CRITICAL: Silence memory warnings and set logging to error only to prevent server stall
     env = os.environ.copy()
     env["REMOTION_IGNORE_MEMORY_LIMIT_CHECK"] = "true"
+    env["REMOTION_LOG"] = "error" 
+    
     fps = input_data.get("fps", 30)
 
     try:
-        # 1. BUNDLE ONCE (SAVING TIME AND MONEY)
+        # 1. BUNDLE ONCE
         print("📦 Proyekt paketlənir (Bundling)...")
         bundle_cmd = [
             "./node_modules/.bin/remotion", "bundle",
@@ -70,9 +73,9 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
             "CineVideo", main_output,
             "--bundle", bundle_path,
             "--props", input_path,
-            "--concurrency", "64",
+            "--concurrency", "32", # Reduced from 64 for stability
             "--ignore-memory-limit-check",
-            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
+            "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
         ]
         
         subprocess.run(main_cmd, check=True, text=True, env=env)
@@ -99,9 +102,9 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
                 "--props", input_path,
                 "--from", str(from_frame),
                 "--to", str(to_frame),
-                "--concurrency", "64",
+                "--concurrency", "32",
                 "--ignore-memory-limit-check",
-                "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
+                "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
             ]
             
             subprocess.run(short_cmd, check=True, text=True, env=env)
