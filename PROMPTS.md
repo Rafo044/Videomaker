@@ -19,7 +19,8 @@ This guide is optimized for your **15-image automated workflow**. It generates e
 > 4. **Particles (MANDATORY):** Every `particles` object MUST include `"showAt": 0` and `"hideAt": 20`.
 > 5. **Visualizers:** Every `visualizer` object must have `"type": "dots"`, `"color": "#ffffff"`, and `"position": "bottom"`.
 > 6. **Shorts:** Define exactly 2 vertical shorts using `startInSeconds` and `endInSeconds`.
-> 7. **Particle Types:** For the `type` field in `particles`, you MUST only use one of these values: `confetti`, `snow`, `rain`, `sparkles`, `bubbles`.
+> 7. **Particle Types:** For the `type` field in `particles`, you MUST only use one of these values: `confetti`, `snow`, `rain`, `sparkles`, `bubbles`, `fireflies`.
+> 8. **Long Videos (Looping):** If the user wants a long video (e.g. 1 hour), add `"targetDuration": 3600` to the root of the JSON. Our system will automatically loop the base scenes to fill this time.
 >
 > ### 📦 JSON Structure:
 > Output ONLY the raw JSON block in this exact format:
@@ -66,7 +67,8 @@ This guide is optimized for your **15-image automated workflow**. It generates e
 >       { 
 >         "title": "Mood Vibe 2", "startInSeconds": 120, "endInSeconds": 135 }
 >     ]
->   }
+>   },
+>   "targetDuration": "[Total duration in seconds, e.g. 3600 for 1 hour. Optional.]"
 > }
 >
 > **Final Rule:** Output ONLY the raw JSON object. No intro, no outro, no markdown formatting outside the JSON block.

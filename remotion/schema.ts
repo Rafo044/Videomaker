@@ -156,6 +156,7 @@ export const CineVideoSchemaBase = z.object({
     endScreen: EndScreenSchema.optional(),
     shorts: z.array(ShortsConfigSchema).optional(),
     data: z.any().optional(),
+    targetDuration: z.number().optional(), // New: Total video duration in seconds (for looping)
 });
 
 export const CineVideoSchema = z.union([

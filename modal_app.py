@@ -68,15 +68,16 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
         subprocess.run(bundle_cmd, check=True, text=True, env=env)
 
         # A. Render Main Video
-        main_output = f"/tmp/{job_id}_main.mp4"
-        print(f"🚀 Əsas Video Render (@CineVideo) başladı...")
+        main_output = f"/tmp/{job_id}_main_base.mp4"
+        final_main_output = f"/tmp/{job_id}_main_final.mp4"
+        print(f"🚀 Baza Video Render (@CineVideo) başladı...")
         
         main_cmd = [
             "./node_modules/.bin/remotion", "render",
             "CineVideo", main_output,
             "--bundle", bundle_path,
             "--props", input_path,
-            "--concurrency", "24", # Balanced for stability and speed
+            "--concurrency", "24",
             "--ignore-memory-limit-check",
             "--log=error",
             "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
@@ -84,6 +85,24 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
         
         subprocess.run(main_cmd, check=True, text=True, env=env)
         
+        # --- FFmpeg Loop Logic (Hybrid Metod) ---
+        target_duration = input_data.get("targetDuration")
+        if target_duration and os.path.exists(main_output):
+            print(f"🔄 Loop Prosesi başladı: {target_duration} saniyəlik video hazırlanır...")
+            # Use stream_loop to extend the video without re-encoding
+            ffmpeg_loop_cmd = [
+                "ffmpeg", "-y",
+                "-stream_loop", "-1", 
+                "-i", main_output,
+                "-t", str(target_duration),
+                "-c", "copy",
+                "-map_metadata", "0",
+                final_main_output
+            ]
+            subprocess.run(ffmpeg_loop_cmd, check=True, text=True)
+            os.remove(main_output)
+            main_output = final_main_output
+            
         if os.path.exists(main_output):
             with open(main_output, "rb") as f:
                 results["main.mp4"] = f.read()
