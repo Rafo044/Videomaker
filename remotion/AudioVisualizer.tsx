@@ -38,10 +38,12 @@ export const AudioVisualizer: React.FC<VisualizerProps> = ({
                             style={{
                                 width: `${barWidth}px`,
                                 height: `${h}px`,
-                                background: `linear-gradient(to top, ${color}33, ${color})`,
-                                borderRadius: '10px',
-                                boxShadow: h > 80 ? `0 0 15px ${color}44` : 'none',
-                                transition: 'height 0.1s ease-out'
+                                backgroundColor: color,
+                                background: `linear-gradient(to top, transparent, ${color}88, ${color})`,
+                                borderRadius: '2px', // Sharper technical look
+                                boxShadow: `0 0 20px ${color}33, 0 0 5px ${color}66`,
+                                opacity: interpolate(h, [10, 120], [0.3, 1]),
+                                transform: `scaleX(${interpolate(h, [10, 120], [0.8, 1.2])})`,
                             }}
                         />
                     );

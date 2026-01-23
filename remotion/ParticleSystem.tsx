@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, random, interpolate } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, random, interpolate } from 'remotion';
 import { ParticleEffect as ParticleEffectType } from './schema';
 
 const Particle: React.FC<{
@@ -89,7 +89,6 @@ export const ParticleSystem: React.FC<ParticleEffectType & { fps: number }> = ({
     fps,
 }) => {
     const frame = useCurrentFrame();
-    const currentTime = frame / fps;
     const startFrame = showAt * fps;
     const hideFrame = hideAt * fps;
 

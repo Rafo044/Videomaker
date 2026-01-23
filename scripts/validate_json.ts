@@ -38,8 +38,8 @@ async function validate() {
             } else {
                 console.log(`✅ ${file} is valid.`);
             }
-        } catch (e: any) {
-            console.error(`❌ Error reading or parsing ${file}:`, e.message);
+        } catch (e: unknown) {
+            console.error(`❌ Error reading or parsing ${file}:`, (e as Error).message);
             hasError = true;
         }
     }

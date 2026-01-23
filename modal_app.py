@@ -1,8 +1,9 @@
-# Modal App for Remotion Rendering - v1.0.9 (Simple & Robust)
+# Modal App for Remotion Rendering - v1.1.0 (Shorts Support)
 import modal
 import os
 import json
 import subprocess
+import time
 
 # 1. Base Image - Robust and Simple
 remotion_image = (
@@ -29,56 +30,85 @@ remotion_image = (
 
 app = modal.App("remotion-video-service")
 
-# 2. Simplified Render Function (Offloading GDrive to GitHub Actions)
+# 2. Render Function supporting multiple outputs (Main + Shorts)
 @app.function(
     image=remotion_image,
     cpu=64,
-    memory=131072, # 128GB
-    timeout=7200 # 2 hours
+    memory=131072,
+    timeout=7200
 )
 def render_video(input_data: dict, upload_gdrive: bool = False):
     """
-    Renders video and returns bytes. GDrive upload is handled by the caller (GitHub Actions).
+    Renders main video and optional shorts. Returns a dict of {filename: bytes}.
     """
-    import time
-    job_id = f"render_{int(time.time())}"
+    job_id = f"job_{int(time.time())}"
     input_path = f"/tmp/{job_id}_input.json"
-    output_path = f"/tmp/{job_id}.mp4"
+    results = {}
 
     with open(input_path, "w") as f:
         json.dump(input_data, f)
 
-    print(f"🚀 Render başladı: {job_id}")
-    
     env = os.environ.copy()
     env["REMOTION_IGNORE_MEMORY_CHECK"] = "true"
+    fps = input_data.get("fps", 30)
 
     try:
-        # Remotion CLI render
-        # We return the video bytes even if upload_gdrive is requested (to be handled by GitHub)
-        result = subprocess.run([
+        # A. Render Main Video (CineVideo)
+        main_output = f"/tmp/{job_id}_main.mp4"
+        print(f"🚀 Main Video Render başladı: {job_id}")
+        
+        main_cmd = [
             "./node_modules/.bin/remotion", "render",
-            "remotion/index.ts",
-            "CineVideo",
-            output_path,
+            "remotion/index.ts", "CineVideo", main_output,
             "--props", input_path,
             "--concurrency", "64",
             "--timeout", "7200000",
             "--ignore-memory-limit-check",
             "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
-        ], capture_output=True, text=True, env=env)
+        ]
+        
+        subprocess.run(main_cmd, check=True, text=True, env=env)
+        
+        if os.path.exists(main_output):
+            with open(main_output, "rb") as f:
+                results["main.mp4"] = f.read()
+            os.remove(main_output)
 
-        if result.returncode != 0:
-            print(f"❌ Remotion Render Error:\n{result.stderr}")
-            raise Exception(f"Render failed: {result.stderr}")
+        # B. Render Shorts (ShortsVideo)
+        shorts_config = input_data.get("shorts", [])
+        for i, short in enumerate(shorts_config):
+            short_id = f"short_{i}"
+            short_output = f"/tmp/{job_id}_{short_id}.mp4"
+            print(f"🎬 Short Render başladı ({i+1}/{len(shorts_config)}): {short.get('title', short_id)}")
+            
+            # Calculate frames
+            from_frame = int(short["startInSeconds"] * fps)
+            to_frame = int(short["endInSeconds"] * fps)
+            
+            short_cmd = [
+                "./node_modules/.bin/remotion", "render",
+                "remotion/index.ts", "ShortsVideo", short_output,
+                "--props", input_path,
+                "--from", str(from_frame),
+                "--to", str(to_frame),
+                "--concurrency", "64",
+                "--timeout", "7200000",
+                "--ignore-memory-limit-check",
+                "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
+            ]
+            
+            subprocess.run(short_cmd, check=True, text=True, env=env)
+            
+            if os.path.exists(short_output):
+                filename = f"short_{i+1}_{short.get('title', 'video').replace(' ', '_')}.mp4"
+                with open(short_output, "rb") as f:
+                    results[filename] = f.read()
+                os.remove(short_output)
 
-        if os.path.exists(output_path):
-            with open(output_path, "rb") as f:
-                video_bytes = f.read()
-            return video_bytes
-        else:
-            raise Exception("Output file not found after render")
+        return results
 
+    except Exception as e:
+        print(f"❌ Render Error: {str(e)}")
+        raise e
     finally:
         if os.path.exists(input_path): os.remove(input_path)
-        if os.path.exists(output_path): os.remove(output_path)

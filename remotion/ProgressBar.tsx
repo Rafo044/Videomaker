@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, interpolate } from 'remotion';
 import { ProgressBar as ProgressBarType } from './schema';
 
 export const ProgressBar: React.FC<ProgressBarType & { fps: number }> = ({
@@ -13,7 +13,6 @@ export const ProgressBar: React.FC<ProgressBarType & { fps: number }> = ({
     fps,
 }) => {
     const frame = useCurrentFrame();
-    const currentTime = frame / fps;
     const startFrame = showAt * fps;
     const endFrame = (showAt + duration) * fps;
 
@@ -65,7 +64,6 @@ export const ProgressBar: React.FC<ProgressBarType & { fps: number }> = ({
                         width: `${progress}%`,
                         height: '100%',
                         backgroundColor: color,
-                        transition: 'width 0.3s ease',
                     }} />
                 </div>
             </div>

@@ -47,7 +47,7 @@ app.post('/render', async (req, res) => {
             envVariables: {
                 REMOTION_IGNORE_MEMORY_CHECK: 'true',
             },
-            onProgress: ({ renderedFrames, encodedFrames, stitchStage }) => {
+            onProgress: ({ renderedFrames }) => {
                 if (renderedFrames % 10 === 0) {
                     console.log(`📊 Progress: ${renderedFrames}/${composition.durationInFrames} frames rendered`);
                 }
@@ -69,11 +69,12 @@ app.post('/render', async (req, res) => {
             fs.unlinkSync(outputPath);
         });
 
-    } catch (error: any) {
-        console.error('❌ Render error:', error);
+    } catch (error: unknown) {
+        const err = error as Error;
+        console.error('❌ Render error:', err);
         res.status(500).json({
-            error: error.message,
-            stack: error.stack,
+            error: err.message,
+            stack: err.stack,
         });
     }
 });

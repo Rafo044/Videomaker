@@ -64,7 +64,7 @@ export const ProgressBarSchema = z.object({
 
 // Particle Effect
 export const ParticleEffectSchema = z.object({
-    type: z.enum(['confetti', 'snow', 'rain', 'sparkles', 'bubbles']),
+    type: z.enum(['confetti', 'snow', 'rain', 'sparkles', 'bubbles', 'fireflies']),
     count: z.number().optional(),
     showAt: z.number(),
     hideAt: z.number(),
@@ -138,7 +138,14 @@ export const WatermarkSchema = z.object({
     scale: z.number().optional(),
 });
 
-export const CineVideoSchema = z.object({
+export const ShortsConfigSchema = z.object({
+    startInSeconds: z.number(),
+    endInSeconds: z.number(),
+    title: z.string().optional(),
+    description: z.string().optional(),
+});
+
+export const CineVideoSchemaBase = z.object({
     scenes: z.array(SceneSchema),
     backgroundMusic: z.string().nullable().optional(),
     backgroundMusicVolume: z.number().optional(),
@@ -147,9 +154,16 @@ export const CineVideoSchema = z.object({
 
     watermark: WatermarkSchema.optional(),
     endScreen: EndScreenSchema.optional(),
+    shorts: z.array(ShortsConfigSchema).optional(),
+    data: z.any().optional(),
 });
 
-export type CineVideoProps = z.infer<typeof CineVideoSchema>;
+export const CineVideoSchema = z.union([
+    CineVideoSchemaBase,
+    z.array(CineVideoSchemaBase).min(1).transform(a => a[0])
+]);
+
+export type CineVideoProps = z.infer<typeof CineVideoSchemaBase>;
 export type SceneProps = z.infer<typeof SceneSchema>;
 export type TransitionType = z.infer<typeof TransitionTypeSchema>;
 export type KenBurnsEffect = z.infer<typeof KenBurnsSchema>;

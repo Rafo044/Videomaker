@@ -14,7 +14,7 @@
             "assets": [
                 "https://picsum.photos/seed/lofi3/1920/1080"
             ],
-            "durationInSeconds": 19,
+            "durationInSeconds": 15,
             "kenBurns": {
                 "startScale": 1.15,
                 "endScale": 1.05,
@@ -34,12 +34,12 @@
                 "opacity": 0.8
             },
             "titleCard": {
-                "text": "Premium Lofi",
-                "subtitle": "Relax & Focus",
+                "text": "Rafelune",
+                "subtitle": "Midnight Chill Sessions",
                 "animation": "fade",
                 "position": "center",
                 "showAt": 1,
-                "hideAt": 6
+                "hideAt": 7
             },
             "transitionAfter": "fade",
             "transitionDuration": 1.5
@@ -48,7 +48,7 @@
             "assets": [
                 "https://picsum.photos/seed/lofi4/1920/1080"
             ],
-            "durationInSeconds": 10,
+            "durationInSeconds": 15,
             "zoomDirection": "in",
             "particles": {
                 "type": "sparkles",
@@ -63,6 +63,18 @@
                 "position": "bottom",
                 "opacity": 0.7
             }
+        }
+    ],
+    "shorts": [
+        {
+            "title": "Midnight Chill - Part 1",
+            "startInSeconds": 1,
+            "endInSeconds": 14
+        },
+        {
+            "title": "Starry Night - Part 2",
+            "startInSeconds": 16,
+            "endInSeconds": 29
         }
     ]
 }

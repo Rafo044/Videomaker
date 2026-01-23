@@ -65,7 +65,7 @@ export const Scene: React.FC<SceneProps & { transitionFrames: number }> = ({
         return (
             <AbsoluteFill style={{ justifyContent: titleCard.position || 'center', alignItems: 'center', padding: '5%' }}>
                 <div style={{ opacity: titleOpacity, transform: `translateY(${yOffset}px)`, textAlign: 'center', color: 'white', textShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>
-                    <h1 style={{ fontSize: '80px', fontWeight: 'bold', margin: 0, fontFamily: 'Inter, sans-serif' }}>{titleCard.text}</h1>
+                    <h1 style={{ fontSize: '80px', fontWeight: 'bold', margin: 0, fontFamily: 'Inter, sans-serif', lineHeight: '1.1' }}>{titleCard.text}</h1>
                     {titleCard.subtitle && <p style={{ fontSize: '40px', marginTop: '20px', opacity: 0.9 }}>{titleCard.subtitle}</p>}
                 </div>
             </AbsoluteFill>
@@ -103,7 +103,7 @@ export const Scene: React.FC<SceneProps & { transitionFrames: number }> = ({
     };
 
     return (
-        <AbsoluteFill style={{ backgroundColor: '#000' }}>
+        <AbsoluteFill style={{ backgroundColor: '#0a0a0a' }}>
             <AbsoluteFill style={{ opacity, ...getTransform() }}>
                 {isVideoAsset ? (
                     <Video src={assetUrl} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.1) brightness(0.9) saturate(0.8) sepia(0.1)' }} startFrom={videoPlayback?.startFrom ? Math.round(videoPlayback.startFrom * fps) : 0} endAt={videoPlayback?.endAt ? Math.round(videoPlayback.endAt * fps) : durationFrames} volume={0} muted={true} loop={videoPlayback?.loop || false} />
@@ -124,7 +124,7 @@ export const Scene: React.FC<SceneProps & { transitionFrames: number }> = ({
             {/* Aesthetic Overlays */}
             <AbsoluteFill style={{
                 pointerEvents: 'none',
-                background: 'radial-gradient(circle, transparent 20%, rgba(0,0,0,0.4) 100%)',
+                background: 'radial-gradient(circle, transparent 20%, rgba(10,10,10,0.4) 100%)',
                 mixBlendMode: 'multiply'
             }} />
 
@@ -147,13 +147,13 @@ export const Scene: React.FC<SceneProps & { transitionFrames: number }> = ({
                 opacity: 0.6,
                 textShadow: '0 0 10px rgba(255,255,255,0.5)'
             }}>
-                REC  ●  {new Array(3).fill(0).map((_, i) => {
+                REC  ●  {(() => {
                     const time = Math.floor(frame / fps);
                     const h = Math.floor(time / 3600).toString().padStart(2, '0');
                     const m = Math.floor((time % 3600) / 60).toString().padStart(2, '0');
                     const s = (time % 60).toString().padStart(2, '0');
                     return `${h}:${m}:${s}`;
-                })[0]}
+                })()}
             </div>
 
             {audio && <Audio src={audio} volume={audioVolume} />}

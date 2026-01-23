@@ -8,7 +8,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { CineVideoProps } from "../remotion/schema";
 
-interface JobData extends CineVideoProps { }
+type JobData = CineVideoProps;
 
 type JobState =
   | {
@@ -71,15 +71,8 @@ export const makeRenderQueue = ({
       const inputProps = job.data;
 
       const chromiumOptions = {
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-          "--no-zygote",
-          "--disable-web-security",
-          "--allow-file-access-from-files",
-        ],
+        gl: 'swiftshader' as const,
+        ignoreCertificateErrors: true,
       };
 
       const composition = await selectComposition({

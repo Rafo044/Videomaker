@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, Img, useCurrentFrame, useVideoConfig, interpolate } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, interpolate } from 'remotion';
 import { EndScreen as EndScreenType } from './schema';
 
 export const EndScreen: React.FC<EndScreenType & { fps: number; totalDuration: number }> = ({
@@ -36,6 +36,7 @@ export const EndScreen: React.FC<EndScreenType & { fps: number; totalDuration: n
                         color: 'white',
                         marginBottom: '40px',
                         fontFamily: 'Inter, sans-serif',
+                        lineHeight: '1.2',
                     }}
                 >
                     {text}

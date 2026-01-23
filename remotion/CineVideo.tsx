@@ -7,12 +7,14 @@ import { wipe } from '@remotion/transitions/wipe';
 import { flip } from '@remotion/transitions/flip';
 import { clockWipe } from '@remotion/transitions/clock-wipe';
 import { springTiming, linearTiming } from '@remotion/transitions';
+import { TransitionPresentation, TransitionTiming } from '@remotion/transitions';
 import { Scene } from './Scene';
 import { EndScreen } from './EndScreen';
 import { CineVideoProps, TransitionType } from './schema';
 import { staticFile } from 'remotion';
 
-const getTransitionEffect = (type: TransitionType = 'fade', durationInSeconds: number, fps: number, width: number, height: number) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getTransitionEffect = (type: TransitionType = 'fade', durationInSeconds: number, fps: number, width: number, height: number): { presentation: TransitionPresentation<any>, timing: TransitionTiming } | null => {
     const durationInFrames = Math.round(durationInSeconds * fps);
     const timing = springTiming({ config: { damping: 200, mass: 1.5, stiffness: 50 } });
 
@@ -32,13 +34,22 @@ export const CineVideo: React.FC<CineVideoProps> = ({
 }) => {
     const frame = useCurrentFrame();
 
-    const bgMusicVolume = interpolate(frame % 60, [0, 30, 60], [backgroundMusicVolume, backgroundMusicVolume * 0.7, backgroundMusicVolume], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' });
-
     const totalDuration = scenes.reduce((sum, scene) => sum + scene.durationInSeconds, 0);
 
     return (
-        <AbsoluteFill style={{ backgroundColor: '#000' }}>
-            {backgroundMusic && <Audio src={backgroundMusic} volume={audioDucking ? bgMusicVolume : backgroundMusicVolume} loop />}
+        <AbsoluteFill style={{ backgroundColor: '#0a0a0a' }}>
+            {backgroundMusic && (
+                <Audio
+                    src={backgroundMusic}
+                    volume={(f) => {
+                        const v = audioDucking
+                            ? interpolate(f % 60, [0, 30, 60], [backgroundMusicVolume, backgroundMusicVolume * 0.7, backgroundMusicVolume])
+                            : backgroundMusicVolume;
+                        return v;
+                    }}
+                    loop
+                />
+            )}
 
             <TransitionSeries>
                 {scenes.map((scene, index) => {
@@ -56,7 +67,7 @@ export const CineVideo: React.FC<CineVideoProps> = ({
                                 const { width, height } = { width: 1920, height: 1080 }; // Default as we are outside hook, but better pass from component
                                 const transition = getTransitionEffect(scene.transitionAfter, transitionDuration, fps, width, height);
                                 if (!transition) return null;
-                                return <TransitionSeries.Transition presentation={transition.presentation as any} timing={transition.timing} />;
+                                return <TransitionSeries.Transition presentation={transition.presentation} timing={transition.timing} />;
                             })()}
                         </React.Fragment>
                     );
@@ -81,17 +92,23 @@ export const CineVideo: React.FC<CineVideoProps> = ({
                                 color: 'white',
                                 fontFamily: 'Inter, sans-serif',
                                 textTransform: 'uppercase',
-                                letterSpacing: '6px',
-                                background: 'rgba(0, 0, 0, 0.4)',
-                                backdropFilter: 'blur(16px) saturate(180%)',
-                                WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-                                padding: '12px 32px',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                letterSpacing: '8px',
+                                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                                backgroundImage: 'linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(0, 0, 0, 0.4))',
+                                backdropFilter: 'blur(20px) saturate(200%)',
+                                WebkitBackdropFilter: 'blur(20px) saturate(200%)',
+                                padding: '14px 36px',
+                                borderRadius: '4px', // Sharper geometry for technical feel
+                                border: '1.5px solid rgba(255, 255, 255, 0.2)',
                                 opacity: watermark.opacity || 0.95,
-                                textShadow: '0 2px 10px rgba(0,0,0,0.8)',
-                                boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+                                textShadow: '0 2px 15px rgba(0,0,0,0.9)',
+                                boxShadow: '0 15px 35px rgba(0,0,0,0.6), inset 0 0 10px rgba(255,255,255,0.05)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '15px',
+                                lineHeight: '1.4'
                             }}>
+                                <span style={{ opacity: 0.8, fontSize: '0.6em', borderRight: '1px solid rgba(255,255,255,0.3)', paddingRight: '15px', fontWeight: '400' }}>HQ</span>
                                 {watermark.text}
                             </div>
                         ) : (
@@ -105,7 +122,6 @@ export const CineVideo: React.FC<CineVideoProps> = ({
                                         border: '2px solid rgba(255, 255, 255, 0.4)',
                                         objectFit: 'cover',
                                         opacity: watermark.opacity || 0.95,
-                                        transition: 'all 0.3s ease'
                                     }}
                                 />
                             )

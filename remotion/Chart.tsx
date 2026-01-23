@@ -113,7 +113,8 @@ export const Chart: React.FC<ChartType & { fps: number }> = ({
         }}>
             <div
                 style={{
-                    background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    backgroundImage: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%)',
                     padding: '60px',
                     borderRadius: '40px',
                     minWidth: '700px',
@@ -131,8 +132,7 @@ export const Chart: React.FC<ChartType & { fps: number }> = ({
                         fontWeight: '900',
                         textAlign: 'center',
                         fontFamily: 'Inter, sans-serif',
-                        letterSpacing: '-1px',
-                        textShadow: '0 2px 10px rgba(0,0,0,0.3)',
+                        lineHeight: '1.2',
                     }}>
                         {title}
                     </h2>

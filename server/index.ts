@@ -4,6 +4,7 @@ import { bundle } from "@remotion/bundler";
 import path from "node:path";
 import { ensureBrowser } from "@remotion/renderer";
 import { CineVideoSchema } from "../remotion/schema";
+import fs from "node:fs";
 
 const { PORT = 3000, REMOTION_SERVE_URL } = process.env;
 
@@ -70,10 +71,9 @@ function setupApp({ remotionBundleUrl }: { remotionBundleUrl: string }) {
 
   // LIST RENDERS
   app.get("/files", (req, res) => {
-    const fs = require('fs');
-    const files = fs.readdirSync(rendersDir).filter((f: string) => f.endsWith('.mp4'));
+    const files = fs.readdirSync(rendersDir).filter((f) => f.endsWith('.mp4'));
     res.json({
-      renders: files.map((f: string) => ({
+      renders: files.map((f) => ({
         filename: f,
         url: `http://localhost:${PORT}/renders/${f}`
       }))
