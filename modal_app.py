@@ -25,7 +25,7 @@ remotion_image = (
         "npm install",
         "./node_modules/.bin/remotion browser ensure"
     )
-    .env({"REMOTION_IGNORE_MEMORY_CHECK": "true"})
+    .env({"REMOTION_IGNORE_MEMORY_LIMIT_CHECK": "true"})
 )
 
 app = modal.App("remotion-video-service")
@@ -49,7 +49,7 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
         json.dump(input_data, f)
 
     env = os.environ.copy()
-    env["REMOTION_IGNORE_MEMORY_CHECK"] = "true"
+    env["REMOTION_IGNORE_MEMORY_LIMIT_CHECK"] = "true"
     fps = input_data.get("fps", 30)
 
     try:
