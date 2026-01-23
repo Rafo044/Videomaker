@@ -67,7 +67,8 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
         
         main_cmd = [
             "./node_modules/.bin/remotion", "render",
-            bundle_path, "CineVideo", main_output,
+            "CineVideo", main_output,
+            "--bundle", bundle_path,
             "--props", input_path,
             "--concurrency", "64",
             "--ignore-memory-limit-check",
@@ -93,7 +94,8 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
             
             short_cmd = [
                 "./node_modules/.bin/remotion", "render",
-                bundle_path, "ShortsVideo", short_output,
+                "ShortsVideo", short_output,
+                "--bundle", bundle_path,
                 "--props", input_path,
                 "--from", str(from_frame),
                 "--to", str(to_frame),
