@@ -1,11 +1,11 @@
-# Modal App for Remotion Rendering - v1.1.0 (Shorts Support)
+# Modal App for Remotion Rendering - v1.2.0 (High Performance)
 import modal
 import os
 import json
 import subprocess
 import time
 
-# 1. Base Image - Robust and Simple
+# 1. Base Image
 remotion_image = (
     modal.Image.debian_slim()
     .apt_install(
@@ -25,12 +25,14 @@ remotion_image = (
         "npm install",
         "./node_modules/.bin/remotion browser ensure"
     )
-    .env({"REMOTION_IGNORE_MEMORY_LIMIT_CHECK": "true"})
+    .env({
+        "REMOTION_IGNORE_MEMORY_LIMIT_CHECK": "true",
+        "REMOTION_IGNORE_WINDRIVE_CHECK": "true"
+    })
 )
 
 app = modal.App("remotion-video-service")
 
-# 2. Render Function supporting multiple outputs (Main + Shorts)
 @app.function(
     image=remotion_image,
     cpu=64,
@@ -38,11 +40,9 @@ app = modal.App("remotion-video-service")
     timeout=7200
 )
 def render_video(input_data: dict, upload_gdrive: bool = False):
-    """
-    Renders main video and optional shorts. Returns a dict of {filename: bytes}.
-    """
     job_id = f"job_{int(time.time())}"
     input_path = f"/tmp/{job_id}_input.json"
+    bundle_path = f"/tmp/{job_id}_bundle.js"
     results = {}
 
     with open(input_path, "w") as f:
@@ -53,16 +53,23 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
     fps = input_data.get("fps", 30)
 
     try:
-        # A. Render Main Video (CineVideo)
+        # 1. BUNDLE ONCE (SAVING TIME AND MONEY)
+        print("📦 Proyekt paketlənir (Bundling)...")
+        bundle_cmd = [
+            "./node_modules/.bin/remotion", "bundle",
+            "remotion/index.ts", bundle_path
+        ]
+        subprocess.run(bundle_cmd, check=True, text=True, env=env)
+
+        # A. Render Main Video
         main_output = f"/tmp/{job_id}_main.mp4"
-        print(f"🚀 Main Video Render başladı: {job_id}")
+        print(f"🚀 Əsas Video Render başladı: {job_id}")
         
         main_cmd = [
             "./node_modules/.bin/remotion", "render",
-            "remotion/index.ts", "CineVideo", main_output,
+            bundle_path, "CineVideo", main_output,
             "--props", input_path,
             "--concurrency", "64",
-            "--timeout", "7200000",
             "--ignore-memory-limit-check",
             "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
         ]
@@ -74,25 +81,23 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
                 results["main.mp4"] = f.read()
             os.remove(main_output)
 
-        # B. Render Shorts (ShortsVideo)
+        # B. Render Shorts (Using same bundle)
         shorts_config = input_data.get("shorts", [])
         for i, short in enumerate(shorts_config):
             short_id = f"short_{i}"
             short_output = f"/tmp/{job_id}_{short_id}.mp4"
             print(f"🎬 Short Render başladı ({i+1}/{len(shorts_config)}): {short.get('title', short_id)}")
             
-            # Calculate frames
             from_frame = int(short["startInSeconds"] * fps)
             to_frame = int(short["endInSeconds"] * fps)
             
             short_cmd = [
                 "./node_modules/.bin/remotion", "render",
-                "remotion/index.ts", "ShortsVideo", short_output,
+                bundle_path, "ShortsVideo", short_output,
                 "--props", input_path,
                 "--from", str(from_frame),
                 "--to", str(to_frame),
                 "--concurrency", "64",
-                "--timeout", "7200000",
                 "--ignore-memory-limit-check",
                 "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
             ]
@@ -108,7 +113,8 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
         return results
 
     except Exception as e:
-        print(f"❌ Render Error: {str(e)}")
+        print(f"❌ Render Xətası: {str(e)}")
         raise e
     finally:
         if os.path.exists(input_path): os.remove(input_path)
+        if os.path.exists(bundle_path): os.remove(bundle_path)
