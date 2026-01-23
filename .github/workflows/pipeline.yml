@@ -107,18 +107,29 @@ jobs:
           print(f"Toplam {len(json_files)} fayl SIRALI şəkildə emal olunacaq...")
 
           for json_file in sorted(json_files):
-              output_name = f"renders/{Path(json_file).stem}.mp4"
+              stem = Path(json_file).stem
               print(f"\n--- GÖNDƏRİLİR: {json_file} ---")
               try:
                   with open(json_file, "r") as j:
                       data = json.load(j)
                   
-                  # Modal returns bytes
-                  video_bytes = f.remote(data, upload_gdrive=False)
+                  # Modal returns dict {filename: bytes}
+                  results = f.remote(data, upload_gdrive=False)
                   
-                  with open(output_name, "wb") as out:
-                      out.write(video_bytes)
-                  print(f"--- TAMAMLANDI: {output_name} ---")
+                  if not isinstance(results, dict):
+                      print(f"!!! Gözlənilməyən tip ({json_file}): {type(results)}")
+                      continue
+
+                  for filename, content in results.items():
+                      # Customize output filename
+                      if filename == "main.mp4":
+                          save_path = f"renders/{stem}.mp4"
+                      else:
+                          save_path = f"renders/{stem}_{filename}"
+                      
+                      with open(save_path, "wb") as out:
+                          out.write(content)
+                      print(f"--- TAMAMLANDI: {save_path} ---")
               except Exception as e:
                   print(f"!!! XƏTA ({json_file}): {e}")
                   continue
