@@ -12,9 +12,12 @@ const isVideo = (url: string): boolean => {
 
 const getEasingFunction = (easing?: string) => {
     switch (easing) {
-        case 'easeIn': return Easing.in(Easing.ease);
-        case 'easeOut': return Easing.out(Easing.ease);
-        case 'easeInOut': return Easing.inOut(Easing.ease);
+        case 'easeIn':
+        case 'ease-in': return Easing.in(Easing.ease);
+        case 'easeOut':
+        case 'ease-out': return Easing.out(Easing.ease);
+        case 'easeInOut':
+        case 'ease-in-out': return Easing.inOut(Easing.ease);
         case 'linear':
         default: return Easing.linear;
     }

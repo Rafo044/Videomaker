@@ -16,7 +16,7 @@ export const KenBurnsSchema = z.object({
     startScale: z.number().min(1).max(2).optional(),
     endScale: z.number().min(1).max(2).optional(),
     rotation: z.number().min(-15).max(15).optional(),
-    easing: z.enum(['linear', 'easeIn', 'easeOut', 'easeInOut']).optional(),
+    easing: z.enum(['linear', 'easeIn', 'easeOut', 'easeInOut', 'ease-in', 'ease-out', 'ease-in-out']).optional(),
 });
 
 // Video playback

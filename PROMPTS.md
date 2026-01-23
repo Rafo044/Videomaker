@@ -48,7 +48,7 @@ Choose an atmospheric Lofi theme (e.g., "Neon Tokyo Night", "Rainy Jazz Cafe", "
       "durationInSeconds": 20,
       "particles": { "type": "fireflies", "count": 30, "showAt": 0, "hideAt": 20, "color": "#ffffff" },
       "visualizer": { "type": "dots", "color": "#ffffff", "position": "bottom", "opacity": 0.8 },
-      "kenBurns": { "startScale": 1.1, "endScale": 1.0, "easing": "ease-in-out" }
+      "kenBurns": { "startScale": 1.1, "endScale": 1.0, "easing": "easeInOut" }
     }
   ],
   "watermark": {
