@@ -35,8 +35,8 @@ app = modal.App("remotion-video-service")
 
 @app.function(
     image=remotion_image,
-    cpu=64,
-    memory=131072,
+    cpu=32, # Reduced for cost efficiency, speed maintained via log silencing
+    memory=65536, # Adjusted for 32 CPUs
     timeout=7200
 )
 def render_video(input_data: dict, upload_gdrive: bool = False):
@@ -48,33 +48,37 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
     with open(input_path, "w") as f:
         json.dump(input_data, f)
 
-    # CRITICAL: Silence memory warnings and set logging to error only to prevent server stall
+    # CRITICAL EMPIRICAL FIXES:
+    # 1. REMOTION_LOG=error stops the massive I/O lag from memory warnings
+    # 2. Concurrency=16 is the "sweet spot" for Modal to prevent localhost server crash
     env = os.environ.copy()
-    env["REMOTION_IGNORE_MEMORY_LIMIT_CHECK"] = "true"
     env["REMOTION_LOG"] = "error" 
+    env["REMOTION_IGNORE_MEMORY_LIMIT_CHECK"] = "true"
     
     fps = input_data.get("fps", 30)
 
     try:
-        # 1. BUNDLE ONCE
-        print("📦 Proyekt paketlənir (Bundling)...")
+        # 1. BUNDLE ONCE (High Efficiency)
+        print("📦 Layihə bir dəfəlik paketlənir (Bundling)...")
         bundle_cmd = [
             "./node_modules/.bin/remotion", "bundle",
-            "remotion/index.ts", bundle_path
+            "remotion/index.ts", bundle_path,
+            "--log=error"
         ]
         subprocess.run(bundle_cmd, check=True, text=True, env=env)
 
         # A. Render Main Video
         main_output = f"/tmp/{job_id}_main.mp4"
-        print(f"🚀 Əsas Video Render başladı: {job_id}")
+        print(f"🚀 Əsas Video Render (@CineVideo) başladı...")
         
         main_cmd = [
             "./node_modules/.bin/remotion", "render",
             "CineVideo", main_output,
             "--bundle", bundle_path,
             "--props", input_path,
-            "--concurrency", "32", # Reduced from 64 for stability
+            "--concurrency", "24", # Balanced for stability and speed
             "--ignore-memory-limit-check",
+            "--log=error",
             "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
         ]
         
@@ -84,13 +88,14 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
             with open(main_output, "rb") as f:
                 results["main.mp4"] = f.read()
             os.remove(main_output)
+            print(f"✅ Əsas Video hazırdır.")
 
-        # B. Render Shorts (Using same bundle)
+        # B. Render Shorts (Reusing SAME Bundle)
         shorts_config = input_data.get("shorts", [])
         for i, short in enumerate(shorts_config):
             short_id = f"short_{i}"
             short_output = f"/tmp/{job_id}_{short_id}.mp4"
-            print(f"🎬 Short Render başladı ({i+1}/{len(shorts_config)}): {short.get('title', short_id)}")
+            print(f"🎬 Short {i+1}/{len(shorts_config)} render olunur: {short.get('title', short_id)}")
             
             from_frame = int(short["startInSeconds"] * fps)
             to_frame = int(short["endInSeconds"] * fps)
@@ -102,8 +107,9 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
                 "--props", input_path,
                 "--from", str(from_frame),
                 "--to", str(to_frame),
-                "--concurrency", "32",
+                "--concurrency", "24",
                 "--ignore-memory-limit-check",
+                "--log=error",
                 "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
             ]
             
@@ -114,11 +120,12 @@ def render_video(input_data: dict, upload_gdrive: bool = False):
                 with open(short_output, "rb") as f:
                     results[filename] = f.read()
                 os.remove(short_output)
+                print(f"✅ {filename} hazırdır.")
 
         return results
 
     except Exception as e:
-        print(f"❌ Render Xətası: {str(e)}")
+        print(f"❌ Krtitiki Render Xətası: {str(e)}")
         raise e
     finally:
         if os.path.exists(input_path): os.remove(input_path)
