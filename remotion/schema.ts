@@ -155,6 +155,7 @@ export const CineVideoSchemaBase = z.object({
     watermark: WatermarkSchema.optional(),
     endScreen: EndScreenSchema.optional(),
     shorts: z.array(ShortsConfigSchema).optional(),
+    selectedShortIndex: z.number().optional(), // New: Optimization for rendering a specific short
     data: z.any().optional(),
     targetDuration: z.number().optional(), // New: Total video duration in seconds (for looping)
 });

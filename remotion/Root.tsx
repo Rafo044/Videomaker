@@ -1,11 +1,22 @@
 import React from "react";
 import { Composition } from "remotion";
 import { CineVideo } from "./CineVideo";
-import { CineVideoSchema, CineVideoProps } from "./schema";
+import { CineVideoSchema, CineVideoSchemaBase, CineVideoProps } from "./schema";
 import { ShortsVideo } from "./ShortsVideo";
 
 const calculateVideoMetadata = ({ props }: { props: CineVideoProps }) => {
   const fps = props.fps || 30;
+
+  // Optimization for Shorts: If a specific short is selected, return only its duration
+  if (props.selectedShortIndex !== undefined && props.shorts && props.shorts[props.selectedShortIndex]) {
+    const short = props.shorts[props.selectedShortIndex];
+    const duration = short.endInSeconds - short.startInSeconds;
+    return {
+      durationInFrames: Math.max(1, Math.round(duration * fps)),
+      fps,
+    };
+  }
+
   let totalFrames = 0;
   props.scenes.forEach((scene, index) => {
     const sceneFrames = Math.round(scene.durationInSeconds * fps);
@@ -18,7 +29,7 @@ const calculateVideoMetadata = ({ props }: { props: CineVideoProps }) => {
   });
   return {
     durationInFrames: Math.max(1, totalFrames),
-    fps: fps,
+    fps,
   };
 };
 
@@ -31,7 +42,7 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1920}
         height={1080}
-        schema={CineVideoSchema}
+        schema={CineVideoSchemaBase}
         calculateMetadata={calculateVideoMetadata}
         defaultProps={{
           scenes: [
@@ -50,7 +61,7 @@ export const RemotionRoot: React.FC = () => {
         fps={30}
         width={1080}
         height={1920}
-        schema={CineVideoSchema}
+        schema={CineVideoSchemaBase}
         calculateMetadata={calculateVideoMetadata}
         defaultProps={{
           scenes: [

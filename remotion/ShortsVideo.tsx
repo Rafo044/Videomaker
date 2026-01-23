@@ -1,31 +1,30 @@
-import React from 'react';
-import { AbsoluteFill, useVideoConfig } from 'remotion';
+import { AbsoluteFill, useVideoConfig, Sequence } from 'remotion';
 import { CineVideo } from './CineVideo';
 import { CineVideoProps } from './schema';
 
-/**
- * ShortsVideo is a vertical container (9:16) that crops the main CineVideo content.
- * It's designed to be used with the 'ShortsVideo' composition in Root.tsx.
- */
 export const ShortsVideo: React.FC<CineVideoProps> = (props) => {
-    const { width, height } = useVideoConfig();
+    const { width, height, fps, durationInFrames } = useVideoConfig();
+    const { selectedShortIndex, shorts } = props;
+
+    // Calculate offset if a specific short is selected
+    const offsetInSeconds = (selectedShortIndex !== undefined && shorts && shorts[selectedShortIndex])
+        ? shorts[selectedShortIndex].startInSeconds
+        : 0;
+    const offsetInFrames = Math.round(offsetInSeconds * fps);
 
     return (
         <AbsoluteFill style={{ backgroundColor: 'black', overflow: 'hidden' }}>
-            {/* 
-                We render the main CineVideo at its original landscape size,
-                then scale and center it to fill the vertical frame (9:16).
-                This creates a "zoomed-in" vertical look while keeping our premium assets.
-            */}
             <AbsoluteFill style={{
                 width: 1920,
                 height: 1080,
                 left: (width - 1920) / 2,
                 top: (height - 1080) / 2,
-                transform: `scale(${height / 1080 * 1.2})`, // Scale slightly more to ensure no black edges
+                transform: `scale(${height / 1080 * 1.2})`,
                 transformOrigin: 'center'
             }}>
-                <CineVideo {...props} />
+                <Sequence from={-offsetInFrames} durationInFrames={Infinity}>
+                    <CineVideo {...props} />
+                </Sequence>
             </AbsoluteFill>
         </AbsoluteFill>
     );

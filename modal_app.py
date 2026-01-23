@@ -1,9 +1,10 @@
-# Modal App for Remotion Rendering - v1.2.0 (High Performance)
+# Modal App for Remotion Rendering - v1.3.0 (Optimized & Stable)
 import modal
 import os
 import json
 import subprocess
 import time
+import shutil
 
 # 1. Base Image
 remotion_image = (
@@ -25,126 +26,103 @@ remotion_image = (
         "npm install",
         "./node_modules/.bin/remotion browser ensure"
     )
-    .env({
-        "REMOTION_IGNORE_MEMORY_LIMIT_CHECK": "true",
-        "REMOTION_IGNORE_WINDRIVE_CHECK": "true"
-    })
 )
 
 app = modal.App("remotion-video-service")
+results_volume = modal.Volume.from_name("remotion-results", create_if_missing=True)
 
 @app.function(
     image=remotion_image,
-    cpu=32, # Reduced for cost efficiency, speed maintained via log silencing
-    memory=65536, # Adjusted for 32 CPUs
-    timeout=7200
+    cpu=32,
+    memory=65536,
+    timeout=7200,
+    volumes={"/results": results_volume},
+    retries=0 # Stop the "restart everything" loop
 )
 def render_video(input_data: dict, upload_gdrive: bool = False):
     job_id = f"job_{int(time.time())}"
+    job_dir = f"/results/{job_id}"
+    os.makedirs(job_dir, exist_ok=True)
+    
     input_path = f"/tmp/{job_id}_input.json"
-    bundle_path = f"./{job_id}_bundle.js"
-    results = {}
+    bundle_path = f"/tmp/{job_id}_bundle.js"
+    output_meta = {"main": "", "shorts": []}
 
     with open(input_path, "w") as f:
         json.dump(input_data, f)
 
-    # CRITICAL EMPIRICAL FIXES:
-    # 1. REMOTION_LOG=error stops the massive I/O lag from memory warnings
-    # 2. Concurrency=16 is the "sweet spot" for Modal to prevent localhost server crash
     env = os.environ.copy()
     env["REMOTION_LOG"] = "error" 
     env["REMOTION_IGNORE_MEMORY_LIMIT_CHECK"] = "true"
     
-    fps = input_data.get("fps", 30)
-
     try:
-        # 1. BUNDLE ONCE (High Efficiency)
-        print("📦 Layihə bir dəfəlik paketlənir (Bundling)...")
-        bundle_cmd = [
+        # 1. BUNDLE ONCE
+        print("📦 Layihə paketlənir...")
+        subprocess.run([
             "./node_modules/.bin/remotion", "bundle",
-            "remotion/index.ts", bundle_path,
-            "--log=error"
-        ]
-        subprocess.run(bundle_cmd, check=True, text=True, env=env)
+            "remotion/index.ts", bundle_path, "--log=error"
+        ], check=True, env=env)
 
-        # A. Render Main Video
-        main_output = f"/tmp/{job_id}_main_base.mp4"
-        final_main_output = f"/tmp/{job_id}_main_final.mp4"
-        print(f"🚀 Baza Video Render (@CineVideo) başladı...")
-        
-        main_cmd = [
-            "./node_modules/.bin/remotion", "render",
-            "CineVideo", main_output,
-            "--bundle", bundle_path,
-            "--props", input_path,
-            "--concurrency", "24",
-            "--ignore-memory-limit-check",
-            "--log=error",
+        # 2. RENDER MAIN
+        main_base_output = f"/tmp/{job_id}_main_base.mp4"
+        print("🚀 Base Video Render (@CineVideo) başlayır...")
+        subprocess.run([
+            "./node_modules/.bin/remotion", "render", "CineVideo", main_base_output,
+            "--bundle", bundle_path, "--props", input_path,
+            "--concurrency", "24", "--log=error",
             "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
-        ]
-        
-        subprocess.run(main_cmd, check=True, text=True, env=env)
-        
-        # --- FFmpeg Loop Logic (Hybrid Metod) ---
-        target_duration = input_data.get("targetDuration")
-        if target_duration and os.path.exists(main_output):
-            print(f"🔄 Loop Prosesi başladı: {target_duration} saniyəlik video hazırlanır...")
-            # Use stream_loop to extend the video without re-encoding
-            ffmpeg_loop_cmd = [
-                "ffmpeg", "-y",
-                "-stream_loop", "-1", 
-                "-i", main_output,
-                "-t", str(target_duration),
-                "-c", "copy",
-                "-map_metadata", "0",
-                final_main_output
-            ]
-            subprocess.run(ffmpeg_loop_cmd, check=True, text=True)
-            os.remove(main_output)
-            main_output = final_main_output
-            
-        if os.path.exists(main_output):
-            with open(main_output, "rb") as f:
-                results["main.mp4"] = f.read()
-            os.remove(main_output)
-            print(f"✅ Əsas Video hazırdır.")
+        ], check=True, env=env)
 
-        # B. Render Shorts (Reusing SAME Bundle)
+        # 3. FFMPEG LOOP
+        target_duration = input_data.get("targetDuration")
+        main_final_path = f"{job_dir}/main.mp4"
+        if target_duration:
+            print(f"🔄 Loop: {target_duration} saniyə hazırlanır...")
+            subprocess.run([
+                "ffmpeg", "-y", "-stream_loop", "-1", "-i", main_base_output,
+                "-t", str(target_duration), "-c", "copy", "-map_metadata", "0", main_final_path
+            ], check=True)
+            os.remove(main_base_output)
+        else:
+            shutil.move(main_base_output, main_final_path)
+        
+        output_meta["main"] = main_final_path
+        print(f"✅ Main video hazır: {main_final_path}")
+
+        # 4. OPTIMIZED SHORTS
         shorts_config = input_data.get("shorts", [])
         for i, short in enumerate(shorts_config):
-            short_id = f"short_{i}"
-            short_output = f"/tmp/{job_id}_{short_id}.mp4"
-            print(f"🎬 Short {i+1}/{len(shorts_config)} render olunur: {short.get('title', short_id)}")
+            short_filename = f"short_{i+1}.mp4"
+            short_final_path = f"{job_dir}/{short_filename}"
+            short_props_path = f"/tmp/{job_id}_short_{i}.json"
             
-            from_frame = int(short["startInSeconds"] * fps)
-            to_frame = int(short["endInSeconds"] * fps)
-            
-            short_cmd = [
-                "./node_modules/.bin/remotion", "render",
-                "ShortsVideo", short_output,
-                "--bundle", bundle_path,
-                "--props", input_path,
-                "--from", str(from_frame),
-                "--to", str(to_frame),
-                "--concurrency", "24",
-                "--ignore-memory-limit-check",
-                "--log=error",
-                "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
-            ]
-            
-            subprocess.run(short_cmd, check=True, text=True, env=env)
-            
-            if os.path.exists(short_output):
-                filename = f"short_{i+1}_{short.get('title', 'video').replace(' ', '_')}.mp4"
-                with open(short_output, "rb") as f:
-                    results[filename] = f.read()
-                os.remove(short_output)
-                print(f"✅ {filename} hazırdır.")
+            short_props = input_data.copy()
+            short_props["selectedShortIndex"] = i # TRIGGER OPTIMIZATION
+            with open(short_props_path, "w") as f:
+                json.dump(short_props, f)
 
-        return results
+            print(f"🎬 Short {i+1} render olunur (Optimized)...")
+            subprocess.run([
+                "./node_modules/.bin/remotion", "render", "ShortsVideo", short_final_path,
+                "--bundle", bundle_path, "--props", short_props_path,
+                "--concurrency", "24", "--log=error",
+                "--chromium-flags", "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
+            ], check=True, env=env)
+            
+            output_meta["shorts"].append(short_final_path)
+            if os.path.exists(short_props_path): os.remove(short_props_path)
+
+        results_volume.commit() 
+
+        # Return file paths instead of huge bytes
+        return {
+            "status": "success",
+            "job_id": job_id,
+            "files": output_meta
+        }
 
     except Exception as e:
-        print(f"❌ Krtitiki Render Xətası: {str(e)}")
+        print(f"❌ Kritik Xəta: {str(e)}")
         raise e
     finally:
         if os.path.exists(input_path): os.remove(input_path)
