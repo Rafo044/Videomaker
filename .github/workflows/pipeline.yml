@@ -96,42 +96,51 @@ jobs:
               print(f"Xəta: Servis tapılmadı! {e}")
               exit(1)
 
-          json_files = glob.glob("requests/*.json")
+          print(f"Dəyişmiş JSON faylları təsbit edilir...")
+          
+          # Yalnız son commit-də dəyişmiş JSON-ları tapmaq (və ya hamısını yox, sonuncunu)
+          import subprocess
+          try:
+              diff_cmd = ["git", "diff", "--name-only", "HEAD^", "HEAD", "requests/"]
+              changed_files = subprocess.check_output(diff_cmd).decode("utf-8").splitlines()
+              json_files = [f for f in changed_files if f.endswith(".json") and os.path.exists(f)]
+          except:
+              # Əgər diff alınmasa (məsələn ilk commit), ən son yaradılan faylı götürək
+              json_files = sorted(glob.glob("requests/*.json"), key=os.path.getmtime)[-1:]
+
           if not json_files:
-              print("Render üçün heç bir JSON faylı tapılmadı.")
+              print("Render üçün yeni və ya dəyişmiş JSON faylı tapılmadı.")
               exit(0)
 
           os.makedirs("renders", exist_ok=True)
-          upload_flag = os.getenv("GDRIVE_UPLOAD", "true").lower() == "true"
           
-          print(f"Toplam {len(json_files)} fayl SIRALI şəkildə emal olunacaq...")
+          print(f"Toplam {len(json_files)} yeni fayl emal olunacaq: {json_files}")
 
-          for json_file in sorted(json_files):
+          for json_file in json_files:
               stem = Path(json_file).stem
-              print(f"\n--- GÖNDƏRİLİR: {json_file} ---")
+              print(f"\n🚀 PROSES BAŞLADI: {json_file}")
               try:
                   with open(json_file, "r") as j:
                       data = json.load(j)
+                                   results = f.remote(data, upload_gdrive=False)
                   
-                  # Modal returns dict {filename: bytes}
-                  results = f.remote(data, upload_gdrive=False)
-                  
-                  if not isinstance(results, dict):
-                      print(f"!!! Gözlənilməyən tip ({json_file}): {type(results)}")
-                      continue
-
-                  for filename, content in results.items():
-                      # Customize output filename
-                      if filename == "main.mp4":
-                          save_path = f"renders/{stem}.mp4"
-                      else:
-                          save_path = f"renders/{stem}_{filename}"
+                  if isinstance(results, dict):
+                      # Handle Hybrid Format:
+                      files_to_save = results if "files" not in results else results.get("files", {})
                       
-                      with open(save_path, "wb") as out:
-                          out.write(content)
-                      print(f"--- TAMAMLANDI: {save_path} ---")
+                      for filename, content in results.items():
+                          if isinstance(content, bytes):
+                              save_path = f"renders/{stem}_{filename}"
+                              with open(save_path, "wb") as out:
+                                  out.write(content)
+                              print(f"💾 Artifact üçün fayl yaradıldı: {save_path}")
+                          elif isinstance(content, str):
+                              print(f"🔗 Cloud-da saxlanıldı: {content}")
+                  else:
+                      print(f"⚠️ Gözlənilməyən nəticə tipi: {type(results)}")
+
               except Exception as e:
-                  print(f"!!! XƏTA ({json_file}): {e}")
+                  print(f"!!! KRİTİK XƏTA ({json_file}): {str(e)}")
                   continue
           '
 
