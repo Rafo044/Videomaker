@@ -18,7 +18,7 @@ remotion_image = (
         "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
         "apt-get install -y nodejs"
     )
-    .add_local_dir(".", remote_path="/app", copy=True)
+    .add_local_dir(".", remote_path="/app", copy=True, ignore=[".git", "node_modules", "renders", "requests", "out", "build"])
     .workdir("/app")
     .run_commands(
         "rm -rf node_modules",
