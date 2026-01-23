@@ -32,6 +32,7 @@ jobs:
         id: filter
         uses: dorny/paths-filter@v3
         with:
+          list-files: json
           filters: |
             code:
               - 'modal_app.py'
@@ -40,9 +41,6 @@ jobs:
             requests:
               - 'requests/*.json'
 
-      # ---------------------------------------------------------
-      # STEP 1: VALIDATION & SETUP
-      # ---------------------------------------------------------
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -53,12 +51,8 @@ jobs:
         run: npm install
 
       - name: Validate JSON Requests
-        # Həmişə yoxlayaq ki, səhv JSON-la render başlamasın
         run: npx tsx scripts/validate_json.ts
 
-      # ---------------------------------------------------------
-      # STEP 2: MODAL ACTIONS
-      # ---------------------------------------------------------
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -68,7 +62,6 @@ jobs:
         run: pip install modal
 
       - name: Deploy to Modal
-        # YALNIZ kod dəyişibsə deploy edirik (Məsrəf və vaxta qənaət)
         if: steps.filter.outputs.code == 'true' || github.event.inputs.force_deploy == 'true'
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
@@ -77,13 +70,13 @@ jobs:
           modal token set --token-id $MODAL_TOKEN_ID --token-secret $MODAL_TOKEN_SECRET
           modal deploy modal_app.py
 
-      - name: Render Sequential JSON Requests
-        # YALNIZ JSON dəyişibsə və ya əllə başladılıbsa render edirik
+      - name: Render Video
         if: steps.filter.outputs.requests == 'true' || github.event_name == 'workflow_dispatch'
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
-          GDRIVE_UPLOAD: ${{ github.event.inputs.upload_gdrive || 'true' }}
+          CHANGED_FILES: ${{ steps.filter.outputs.requests_files }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           modal token set --token-id $MODAL_TOKEN_ID --token-secret $MODAL_TOKEN_SECRET
           python -c '
@@ -93,55 +86,43 @@ jobs:
           try:
               f = modal.Function.from_name("remotion-video-service", "render_video")
           except Exception as e:
-              print(f"Xəta: Servis tapılmadı! {e}")
+              print(f"Error connecting: {e}")
               exit(1)
 
-          print(f"Dəyişmiş JSON faylları təsbit edilir...")
-          
-          # Yalnız son commit-də dəyişmiş JSON-ları tapmaq (və ya hamısını yox, sonuncunu)
-          import subprocess
           try:
-              diff_cmd = ["git", "diff", "--name-only", "HEAD^", "HEAD", "requests/"]
-              changed_files = subprocess.check_output(diff_cmd).decode("utf-8").splitlines()
-              json_files = [f for f in changed_files if f.endswith(".json") and os.path.exists(f)]
+              json_files = json.loads(os.getenv("CHANGED_FILES", "[]"))
           except:
-              # Əgər diff alınmasa (məsələn ilk commit), ən son yaradılan faylı götürək
+              json_files = []
+
+          if not json_files and os.getenv("EVENT_NAME") == "workflow_dispatch":
               json_files = sorted(glob.glob("requests/*.json"), key=os.path.getmtime)[-1:]
 
           if not json_files:
-              print("Render üçün yeni və ya dəyişmiş JSON faylı tapılmadı.")
+              print("No changed requests to process.")
               exit(0)
 
           os.makedirs("renders", exist_ok=True)
-          
-          print(f"Toplam {len(json_files)} yeni fayl emal olunacaq: {json_files}")
-
           for json_file in json_files:
+              if not os.path.exists(json_file): continue
               stem = Path(json_file).stem
-              print(f"\n🚀 PROSES BAŞLADI: {json_file}")
+              print(f"\n🚀 PROCESSING: {json_file}")
               try:
                   with open(json_file, "r") as j:
                       data = json.load(j)
-                                   results = f.remote(data, upload_gdrive=False)
+                  
+                  results = f.remote(data, upload_gdrive=False)
                   
                   if isinstance(results, dict):
-                      # Handle Hybrid Format:
-                      files_to_save = results if "files" not in results else results.get("files", {})
-                      
                       for filename, content in results.items():
                           if isinstance(content, bytes):
                               save_path = f"renders/{stem}_{filename}"
                               with open(save_path, "wb") as out:
                                   out.write(content)
-                              print(f"💾 Artifact üçün fayl yaradıldı: {save_path}")
-                          elif isinstance(content, str):
-                              print(f"🔗 Cloud-da saxlanıldı: {content}")
-                  else:
-                      print(f"⚠️ Gözlənilməyən nəticə tipi: {type(results)}")
-
+                              print(f"✅ Saved: {save_path}")
+                          else:
+                              print(f"🔗 Cloud Path: {content}")
               except Exception as e:
-                  print(f"!!! KRİTİK XƏTA ({json_file}): {str(e)}")
-                  continue
+                  print(f"❌ Error rendering {json_file}: {e}")
           '
 
       - name: Install GDrive Dependencies

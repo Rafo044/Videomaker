@@ -3,7 +3,7 @@ import { CineVideo } from './CineVideo';
 import { CineVideoProps } from './schema';
 
 export const ShortsVideo: React.FC<CineVideoProps> = (props) => {
-    const { width, height, fps, durationInFrames } = useVideoConfig();
+    const { width, height, fps } = useVideoConfig();
     const { selectedShortIndex, shorts } = props;
 
     // Calculate offset if a specific short is selected
@@ -22,7 +22,7 @@ export const ShortsVideo: React.FC<CineVideoProps> = (props) => {
                 transform: `scale(${height / 1080 * 1.2})`,
                 transformOrigin: 'center'
             }}>
-                <Sequence from={-offsetInFrames} durationInFrames={Infinity}>
+                <Sequence from={-offsetInFrames}>
                     <CineVideo {...props} />
                 </Sequence>
             </AbsoluteFill>

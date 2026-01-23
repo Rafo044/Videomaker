@@ -1,7 +1,7 @@
 import React from "react";
 import { Composition } from "remotion";
 import { CineVideo } from "./CineVideo";
-import { CineVideoSchema, CineVideoSchemaBase, CineVideoProps } from "./schema";
+import { CineVideoSchemaBase, CineVideoProps } from "./schema";
 import { ShortsVideo } from "./ShortsVideo";
 
 const calculateVideoMetadata = ({ props }: { props: CineVideoProps }) => {
