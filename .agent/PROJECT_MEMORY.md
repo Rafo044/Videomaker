@@ -21,6 +21,9 @@
    - Layihənin adı: **Rafelune**.
    - Watermark həmişə rəsmi olaraq **"Rafelune"** yazılmalıdır (və ya dinamik `[Channel Name]` placeholderi istifadə edilməlidir).
 
+5. **Git Workflow:**
+   - **MÜTLƏQ:** Hər hansı bir dəyişikliyi `push` etməzdən əvvəl həmişə `git pull` (və ya `git pull --rebase`) edilməlidir. Bu, distant repozitoriya ilə sinxronizasiyanı təmin edir və konfliktlərin qarşısını alır.
+
 ## 📝 LESSONS LEARNED
 
 - **Diqqətsizlik:** "Clean-up" zamanı vacib sahələri (Watermark) silmə.
